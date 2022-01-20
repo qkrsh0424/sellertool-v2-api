@@ -1,5 +1,6 @@
 package com.sellertool.server.config.cors;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.context.annotation.Bean;
@@ -15,9 +16,13 @@ public class CorsFilterConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
+        // TODO :: credentials설정을 하지 않았을 때 비교해보기.
+        // cookie를 요청에 포함하기 위해 credentials설정.
+        config.setAllowCredentials(true);
         config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8081"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(Arrays.asList("Authorization"));
 
         source.registerCorsConfiguration("/**", config);
         return source;

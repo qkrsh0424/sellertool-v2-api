@@ -1,5 +1,11 @@
 package com.sellertool.server.config.security;
 
+import com.sellertool.server.config.auth.JwtAuthenticationFilter;
+import com.sellertool.server.config.auth.JwtAuthenticationProvider;
+import com.sellertool.server.config.auth.PrincipalDetailsService;
+import com.sellertool.server.domain.user.repository.UserRepository;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -9,16 +15,30 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.firewall.DefaultHttpFirewall;
 import org.springframework.security.web.firewall.HttpFirewall;
 
+import lombok.RequiredArgsConstructor;
+
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    private final PrincipalDetailsService principalDetailsService;
+    private final UserRepository userRepository;
+
+    @Value("${jwt.access.secret}")
+    private String accessTokenSecret;
+
+    @Value("${jwt.refresh.secret")
+    private String refreshTokenSecret;
     
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
+            // 토큰을 활용하면 세션이 필요없으므로 STATELESS로 설정해 세션을 사용하지 않는다
             .sessionManagement()
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
@@ -42,6 +62,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .formLogin().disable()
                 .httpBasic().disable()
                 .csrf().disable()
+                .addFilterBefore(new JwtAuthenticationFilter(authenticationManager(), userRepository, accessTokenSecret, refreshTokenSecret), UsernamePasswordAuthenticationFilter.class)
             ;
     }
 
@@ -61,4 +82,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return new DefaultHttpFirewall();
     }
 
+    @Bean
+    public JwtAuthenticationProvider authenticationProvider() {
+        return new JwtAuthenticationProvider(principalDetailsService, passwordEncoder());
+    }
 }
