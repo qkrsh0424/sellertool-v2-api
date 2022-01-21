@@ -1,4 +1,4 @@
-package com.sellertool.server.domain.message.dto;
+package com.sellertool.server.domain.message.model.dto;
 
 import lombok.Data;
 import org.springframework.http.HttpStatus;

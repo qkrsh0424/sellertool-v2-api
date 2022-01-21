@@ -1,5 +1,6 @@
-package com.sellertool.server.domain.user.model.entity;
+package com.sellertool.server.domain.refresh_token.model.entity;
 
+import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -15,17 +16,15 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
 
 @Data
 @Entity
-@Table(name = "user")
+@Table(name = "refresh_token")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Accessors(chain = true)
-public class UserEntity {
-
+public class RefreshTokenEntity {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "cid")
@@ -35,18 +34,16 @@ public class UserEntity {
     @Column(name = "id")
     private UUID id;
 
-    @Column(name = "email")
-    private String email;
+    @Type(type = "uuid-char")
+    @Column(name = "user_id")
+    private UUID userId;
 
-    @Column(name = "password")
-    private String password;
+    @Column(name = "refresh_token")
+    private String refreshToken;
 
-    @Column(name="salt")
-    private String salt;
+    @Column(name = "created_at")
+    private Date createdAt;
 
-    @Column(name="name")
-    private String name;
-
-    @Column(name = "roles")
-    private String roles;
+    @Column(name= "updated_at")
+    private Date updatedAt;
 }

@@ -4,6 +4,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
@@ -23,14 +24,15 @@ public class TokenUtils {
         this.refreshTokenSecret = refreshTokenSecret;
     }
 
+    // final static Integer JWT_TOKEN_EXPIRATION = 1*1000;  // milliseconds - 1분
     final static Integer JWT_TOKEN_EXPIRATION = 20*60*1000;  // milliseconds - 20분
     final static Integer REFRESH_TOKEN_JWT_EXPIRATION = 5*24*60*60*1000;   // milliseconds - 5일
 
-    public static String getJwtAccessToken(UserEntity userEntity) {
+    public static String getJwtAccessToken(UserEntity userEntity, UUID refreshTokenId) {
         JwtBuilder builder = Jwts.builder()
-            .setSubject(userEntity.getEmail() + " JWT_ACT")
+            .setSubject(userEntity.getEmail() + "JWT_ACT")
             .setHeader(createHeader())
-            .setClaims(createClaims(userEntity))
+            .setClaims(createClaims(userEntity, refreshTokenId))
             .setExpiration(createExpiration())
             .signWith(SignatureAlgorithm.HS256, createSigningKey(accessTokenSecret));
 
@@ -57,10 +59,13 @@ public class TokenUtils {
     }
 
     // JWT Palyod
-    private static Map<String, Object> createClaims(UserEntity userEntity) {
+    private static Map<String, Object> createClaims(UserEntity userEntity, UUID refreshTokenId) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("id", userEntity.getId());
         claims.put("email", userEntity.getEmail());
-        claims.put("role", userEntity.getRoles());
+        claims.put("roles", userEntity.getRoles());
+        claims.put("name", userEntity.getName());
+        claims.put("refreshTokenId", refreshTokenId);
         return claims;
     }
 

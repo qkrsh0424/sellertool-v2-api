@@ -1,5 +1,6 @@
 package com.sellertool.server.config.auth;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import com.sellertool.server.domain.user.model.entity.UserEntity;
@@ -19,9 +20,11 @@ public class PrincipalDetails implements UserDetails {
         this.user = user;
     }
 
+    // 권한 설정
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // TODO Auto-generated method stub
+        Collection<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(() -> user.getRoles());
         return authorities;
     }
 

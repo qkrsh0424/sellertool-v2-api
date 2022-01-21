@@ -1,7 +1,9 @@
 package com.sellertool.server.config.auth;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -9,9 +11,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sellertool.server.domain.message.dto.Message;
+import com.sellertool.server.domain.message.model.dto.Message;
+import com.sellertool.server.domain.refresh_token.model.entity.RefreshTokenEntity;
+import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
 import com.sellertool.server.domain.user.model.entity.UserEntity;
-import com.sellertool.server.domain.user.repository.UserRepository;
+import com.sellertool.server.domain.user.model.repository.UserRepository;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -26,19 +30,24 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     
     private UserRepository userRepository;
     private TokenUtils tokenUtils;
+    private RefreshTokenRepository refreshTokenRepository;
 
     final static Integer JWT_TOKEN_COOKIE_EXPIRATION = 5*24*60*60; // seconds - 5일
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, String accessTokenSecret, String refreshTokenSecret) {
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
+    String accessTokenSecret, String refreshTokenSecret) {
         super.setAuthenticationManager(authenticationManager);
         this.userRepository = userRepository;
         this.tokenUtils = new TokenUtils(accessTokenSecret, refreshTokenSecret);
+        this.refreshTokenRepository = refreshTokenRepository;
 
         this.setFilterProcessesUrl("/api/v1/user/login");
     }
@@ -50,6 +59,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         // POST 메소드가 아니면 에러처리
         if(!request.getMethod().equals("POST")) {
+            request.setAttribute("exception-type", "METHOD_ERROR");
             throw new AuthenticationServiceException("Authentication method not supported: " + request.getMethod());
         }
 
@@ -83,11 +93,23 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     protected void successfulAuthentication(HttpServletRequest requset, HttpServletResponse response,
      FilterChain chain, Authentication authentication) throws IOException, ServletException {
         UserEntity user = ((PrincipalDetails)authentication.getPrincipal()).getUser();
-        String accessToken = TokenUtils.getJwtAccessToken(user);
+
+        UUID refreshTokenId = UUID.randomUUID();
+
+        String accessToken = TokenUtils.getJwtAccessToken(user, refreshTokenId);
         String refreshToken = TokenUtils.getJwtRefreshToken();
 
+        // 리프레시 토큰 저장
+        try{
+            this.saveRefreshToken(user, refreshTokenId, refreshToken);
+        }catch(Exception e){
+            log.error("refresh token DB save error.");
+        }
 
-        ResponseCookie tokenCookie = ResponseCookie.from("st_token", accessToken)
+        // TODO :: 리프레시 토큰 삭제
+
+
+        ResponseCookie tokenCookie = ResponseCookie.from("st_actoken", accessToken)
             .httpOnly(true)
             // secure true설정을 하면 https가 아닌 통신에는 쿠키를 전송하지 않음
             // .secure(true)
@@ -118,14 +140,15 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         Message message = new Message();
 
         if(errorType.equals("LOGIN_ERROR")) {
-            message.setMessage(errorType);
-            message.setStatus(HttpStatus.UNAUTHORIZED);
             message.setMemo("email not exist or password not matched.");
         } else if(errorType.equals("INPUT_ERROR")) {
-            message.setMessage(errorType);
-            message.setStatus(HttpStatus.UNAUTHORIZED);
             message.setMemo("input error.");
+        } else if(errorType.equals("METHOD_ERROR")) {
+            message.setMemo(request.getMethod() + " method not supported.");
         }
+
+        message.setMessage(errorType);
+        message.setStatus(HttpStatus.UNAUTHORIZED);
 
         String msg = new ObjectMapper().writeValueAsString(message);
         
@@ -133,6 +156,16 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(msg);
         response.getWriter().flush();
+    }
+
+    private void saveRefreshToken(UserEntity userEntity, UUID rtId, String refreshToken){
+        RefreshTokenEntity refreshTokenEntity = new RefreshTokenEntity();
+        refreshTokenEntity.setId(rtId);
+        refreshTokenEntity.setUserId(userEntity.getId());
+        refreshTokenEntity.setRefreshToken(refreshToken);
+        refreshTokenEntity.setCreatedAt(new Date());
+        refreshTokenEntity.setUpdatedAt(new Date());
+        refreshTokenRepository.save(refreshTokenEntity);
     }
     
 }

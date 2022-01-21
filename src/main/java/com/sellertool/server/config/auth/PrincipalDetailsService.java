@@ -3,7 +3,7 @@ package com.sellertool.server.config.auth;
 import java.util.Optional;
 
 import com.sellertool.server.domain.user.model.entity.UserEntity;
-import com.sellertool.server.domain.user.repository.UserRepository;
+import com.sellertool.server.domain.user.model.repository.UserRepository;
 
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

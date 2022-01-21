@@ -2,8 +2,10 @@ package com.sellertool.server.config.security;
 
 import com.sellertool.server.config.auth.JwtAuthenticationFilter;
 import com.sellertool.server.config.auth.JwtAuthenticationProvider;
+import com.sellertool.server.config.auth.JwtAuthorizationFilter;
 import com.sellertool.server.config.auth.PrincipalDetailsService;
-import com.sellertool.server.domain.user.repository.UserRepository;
+import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
+import com.sellertool.server.domain.user.model.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +30,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final PrincipalDetailsService principalDetailsService;
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Value("${jwt.access.secret}")
     private String accessTokenSecret;
@@ -62,7 +65,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .formLogin().disable()
                 .httpBasic().disable()
                 .csrf().disable()
-                .addFilterBefore(new JwtAuthenticationFilter(authenticationManager(), userRepository, accessTokenSecret, refreshTokenSecret), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthenticationFilter(authenticationManager(), userRepository, refreshTokenRepository, accessTokenSecret, refreshTokenSecret), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthorizationFilter(authenticationManager(), userRepository, refreshTokenRepository, accessTokenSecret, refreshTokenSecret), UsernamePasswordAuthenticationFilter.class)
             ;
     }
 

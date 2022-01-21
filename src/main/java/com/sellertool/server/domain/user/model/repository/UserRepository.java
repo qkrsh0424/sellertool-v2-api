@@ -1,4 +1,4 @@
-package com.sellertool.server.domain.user.repository;
+package com.sellertool.server.domain.user.model.repository;
 
 import java.util.Optional;
 
