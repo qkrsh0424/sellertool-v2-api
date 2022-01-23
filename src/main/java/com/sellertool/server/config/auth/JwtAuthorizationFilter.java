@@ -1,8 +1,7 @@
 package com.sellertool.server.config.auth;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,7 +29,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     
     private UserRepository userRepository;
@@ -45,9 +46,9 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
         String accessTokenSecret, String refreshTokenSecret) {
         super(authenticationManager);
         this.userRepository = userRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.accessTokenSecret = accessTokenSecret;
         this.refreshTokenSecret = refreshTokenSecret;
-        this.refreshTokenRepository = refreshTokenRepository;
         this.tokenUtils = new TokenUtils(accessTokenSecret, refreshTokenSecret);
     }
 
@@ -55,6 +56,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         final Cookie jwtCookie = WebUtils.getCookie(request, "st_actoken");
 
+        // cookied에 액세스토큰 정보가 없다면 체인을 타게 한다
         if(jwtCookie == null) {
             chain.doFilter(request, response);
             return;
@@ -63,69 +65,72 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
         String accessToken = jwtCookie.getValue();
 
         try{
+            // 액세스 토큰이 유효한 경우 claim에 있는 정보를 그대로 저장
             Claims claims = Jwts.parser().setSigningKey(accessTokenSecret).parseClaimsJws(accessToken).getBody();
             
-            // 액세스 토큰이 유효한 경우
-            UserEntity userEntity = new UserEntity();
-            userEntity.setId(UUID.fromString(claims.get("id").toString()))
-                .setEmail(claims.get("email").toString())
-                .setRoles(claims.get("roles").toString())
-                .setName(claims.get("name").toString());
+            UserEntity userEntity = UserEntity.builder()
+                .id(UUID.fromString(claims.get("id").toString()))
+                .email(claims.get("email").toString())
+                .roles(claims.get("roles").toString())
+                .name(claims.get("name").toString())
+                .build();
 
-            PrincipalDetails principalDetails = new PrincipalDetails(userEntity);
-            Authentication authentication = new UsernamePasswordAuthenticationToken(principalDetails, null, principalDetails.getAuthorities());
-            
-            // Authentication 객체 저장
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            this.saveAuthenticationToSecurityContextHolder(userEntity);
         } catch(ExpiredJwtException e) {
-            // 액세스 토큰이 만료된 경우
-            // 리프레시 토큰을 확인해서 액세스 토큰 발급 여부 결정
+            // 액세스 토큰이 만료된 경우 리프레시 토큰을 확인해 액세스 토큰 발급 여부 결정
+
             // 리프레시 토큰 조회 - 액세스 클레임에서 refreshTokenId에 대응하는 RefreshToken값 조회
             Optional<RefreshTokenEntity> refreshTokenEntityOpt = refreshTokenRepository.findById(UUID.fromString(e.getClaims().get("refreshTokenId").toString()));
             
             Jwts.parser().setSigningKey(refreshTokenSecret).parseClaimsJws(refreshTokenEntityOpt.get().getRefreshToken()).getBody();
 
             Claims claims = e.getClaims();
-            
-            System.out.println(claims);
+
             if(refreshTokenEntityOpt != null) {
-                UserEntity userEntity = new UserEntity();
-                userEntity.setId(UUID.fromString(claims.get("id").toString()))
-                    .setEmail(claims.get("email").toString())
-                    .setRoles(claims.get("roles").toString())
-                    .setName(claims.get("name").toString());
-                
+                UserEntity userEntity = UserEntity.builder()
+                        .id(UUID.fromString(claims.get("id").toString()))
+                        .email(claims.get("email").toString())
+                        .roles(claims.get("roles").toString())
+                        .name(claims.get("name").toString())
+                        .build();
+
+                // 새로운 액세스 토큰과 리프레시 토큰을 발급
                 String newAccessToken = tokenUtils.getJwtAccessToken(userEntity, refreshTokenEntityOpt.get().getId());
                 String newRefreshToken = tokenUtils.getJwtRefreshToken();
 
+                // DB에 저장된 리프레시 토큰을 새로운 리프레시 토큰으로 업데이트
                 refreshTokenRepository.findById(refreshTokenEntityOpt.get().getId()).ifPresent(r -> {
                     r.setRefreshToken(newRefreshToken);
+                    r.setUpdatedAt(new Date(System.currentTimeMillis()));
+
                     refreshTokenRepository.save(r);
                 });
-                System.out.println("hi");
 
+                // 새로운 엑세스 토큰을 쿠키에 저장
                 ResponseCookie tokenCookie = ResponseCookie.from("st_actoken", newAccessToken)
                         .httpOnly(true)
-                        // secure true설정을 하면 https가 아닌 통신에는 쿠키를 전송하지 않음
                         // .secure(true)
-                        // 모든 경로에 쿠키를 전송 (path값을 /user로 지정하면 /user와 /user의 하위경로로만 쿠키를 전송)
                         .path("/")
                         .maxAge(JWT_TOKEN_COOKIE_EXPIRATION)
                         .build();
 
                 response.addHeader(HttpHeaders.SET_COOKIE, tokenCookie.toString());
                 
-                PrincipalDetails principalDetails = new PrincipalDetails(userEntity);
-                Authentication authentication = new UsernamePasswordAuthenticationToken(principalDetails, null, principalDetails.getAuthorities());
-                
-                // Authentication 객체 저장
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                this.saveAuthenticationToSecurityContextHolder(userEntity);
             }
         } catch(JwtException e) {
             // 토큰 에러
-            System.out.println("2");
+            log.error("JWT Token error.");
         }
 
         chain.doFilter(request, response);
+    }
+
+    private void saveAuthenticationToSecurityContextHolder(UserEntity userEntity) {
+        PrincipalDetails principalDetails = new PrincipalDetails(userEntity);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(principalDetails, null, principalDetails.getAuthorities());
+                
+        // Authentication 객체 저장
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 }

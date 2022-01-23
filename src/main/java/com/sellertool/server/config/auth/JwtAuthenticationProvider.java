@@ -27,9 +27,11 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         // UserDetailsService를 통해 DB에서 사용자 조회
         PrincipalDetails principalDetails = principalDetailsService.loadUserByUsername(email);
 
+        // matches(입력값+salt를 인코딩한 값, DB에 인코딩되어 저장된 비밀번호)이 다르다면
         if(!passwordEncoder.matches(password, principalDetails.getPassword())) {
             throw new BadCredentialsException(principalDetails.getUsername() + " Invalid password.");
         }
+        
         return new UsernamePasswordAuthenticationToken(principalDetails, password, principalDetails.getAuthorities());
     }
 

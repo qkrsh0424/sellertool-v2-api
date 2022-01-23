@@ -90,7 +90,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     // 로그인 성공 시
     @Override
-    protected void successfulAuthentication(HttpServletRequest requset, HttpServletResponse response,
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
      FilterChain chain, Authentication authentication) throws IOException, ServletException {
         UserEntity user = ((PrincipalDetails)authentication.getPrincipal()).getUser();
 
@@ -106,8 +106,12 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             log.error("refresh token DB save error.");
         }
 
-        // TODO :: 리프레시 토큰 삭제
-
+        // 한 유저에게 발급된 리프레시 토큰이 특정 개수보다 많다면 리프레시 토큰 삭제
+        try{
+            this.deleteOldRefreshTokenForUser(user.getId());
+        }catch(Exception e){
+            log.error("refresh token DB delete error.");
+        }
 
         ResponseCookie tokenCookie = ResponseCookie.from("st_actoken", accessToken)
             .httpOnly(true)
@@ -158,14 +162,22 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         response.getWriter().flush();
     }
 
-    private void saveRefreshToken(UserEntity userEntity, UUID rtId, String refreshToken){
-        RefreshTokenEntity refreshTokenEntity = new RefreshTokenEntity();
-        refreshTokenEntity.setId(rtId);
-        refreshTokenEntity.setUserId(userEntity.getId());
-        refreshTokenEntity.setRefreshToken(refreshToken);
-        refreshTokenEntity.setCreatedAt(new Date());
-        refreshTokenEntity.setUpdatedAt(new Date());
+    // Create DB Refresh Token
+    private void saveRefreshToken(UserEntity userEntity, UUID rtId, String refreshToken) {
+        RefreshTokenEntity refreshTokenEntity = RefreshTokenEntity.builder()
+                .id(rtId)
+                .userId(userEntity.getId())
+                .refreshToken(refreshToken)
+                .createdAt(new Date())
+                .updatedAt(new Date())
+                .build();
+
         refreshTokenRepository.save(refreshTokenEntity);
+    }
+
+    // DELETE DB Refresh Token
+    private void deleteOldRefreshTokenForUser(UUID userId) {
+        refreshTokenRepository.deleteOldRefreshTokenForUser(userId.toString());
     }
     
 }

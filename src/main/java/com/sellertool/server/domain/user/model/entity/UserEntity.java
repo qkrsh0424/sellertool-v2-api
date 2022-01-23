@@ -23,7 +23,6 @@ import lombok.experimental.Accessors;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Accessors(chain = true)
 public class UserEntity {
 
     @Id

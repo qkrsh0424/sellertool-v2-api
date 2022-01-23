@@ -33,7 +33,7 @@ public class TokenUtils {
             .setSubject(userEntity.getEmail() + "JWT_ACT")
             .setHeader(createHeader())
             .setClaims(createClaims(userEntity, refreshTokenId))
-            .setExpiration(createExpiration())
+            .setExpiration(createTokenExpiration(JWT_TOKEN_EXPIRATION))
             .signWith(SignatureAlgorithm.HS256, createSigningKey(accessTokenSecret));
 
         return builder.compact();
@@ -43,7 +43,7 @@ public class TokenUtils {
         JwtBuilder builder = Jwts.builder()
             .setSubject("JWT_RFT")
             .setHeader(createHeader())
-            .setExpiration(createRefreshTokenExpiration())
+            .setExpiration(createTokenExpiration(REFRESH_TOKEN_JWT_EXPIRATION))
             .signWith(SignatureAlgorithm.HS256, createSigningKey(refreshTokenSecret));
         
         return builder.compact();
@@ -69,13 +69,8 @@ public class TokenUtils {
         return claims;
     }
 
-    private static Date createExpiration() {
-        Date expiration = new Date(System.currentTimeMillis() + JWT_TOKEN_EXPIRATION);
-        return expiration;
-    }
-
-    private static Date createRefreshTokenExpiration() {
-        Date expiration = new Date(System.currentTimeMillis() + REFRESH_TOKEN_JWT_EXPIRATION);
+    private static Date createTokenExpiration(Integer expirationTime) {
+        Date expiration = new Date(System.currentTimeMillis() + expirationTime);
         return expiration;
     }
 
