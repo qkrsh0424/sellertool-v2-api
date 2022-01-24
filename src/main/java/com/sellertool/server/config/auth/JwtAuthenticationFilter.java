@@ -11,12 +11,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sellertool.server.config.csrf.CsrfTokenUtils;
 import com.sellertool.server.domain.message.model.dto.Message;
 import com.sellertool.server.domain.refresh_token.model.entity.RefreshTokenEntity;
 import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
 import com.sellertool.server.domain.user.model.entity.UserEntity;
 import com.sellertool.server.domain.user.model.repository.UserRepository;
 
+import org.springframework.boot.web.server.Cookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -29,24 +31,25 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@RequiredArgsConstructor
 @Slf4j
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     
     private UserRepository userRepository;
     private TokenUtils tokenUtils;
+    private CsrfTokenUtils csrfTokenUtils;
     private RefreshTokenRepository refreshTokenRepository;
 
     final static Integer JWT_TOKEN_COOKIE_EXPIRATION = 5*24*60*60; // seconds - 5일
+    final static Integer CSRF_TOKEN_COOKIE_EXPIRATION = 5*24*60*60; // seconds - 5일
 
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
-    String accessTokenSecret, String refreshTokenSecret) {
+    String accessTokenSecret, String refreshTokenSecret, String csrfTokenSecret, String csrfJwtSecret) {
         super.setAuthenticationManager(authenticationManager);
         this.userRepository = userRepository;
         this.tokenUtils = new TokenUtils(accessTokenSecret, refreshTokenSecret);
+        this.csrfTokenUtils = new CsrfTokenUtils(csrfTokenSecret, csrfJwtSecret);
         this.refreshTokenRepository = refreshTokenRepository;
 
         this.setFilterProcessesUrl("/api/v1/user/login");
@@ -76,7 +79,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             }
             
             String fullPassword = user.getPassword() + userOpt.get().getSalt();
-            
             authToken = new UsernamePasswordAuthenticationToken(user.getEmail(), fullPassword);
         } catch (IOException e) {
             request.setAttribute("exception-type", "INPUT_ERROR");
@@ -96,8 +98,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         UUID refreshTokenId = UUID.randomUUID();
 
-        String accessToken = TokenUtils.getJwtAccessToken(user, refreshTokenId);
-        String refreshToken = TokenUtils.getJwtRefreshToken();
+        String ipAddress = this.getClientIpAddress(request);
+        String accessToken = TokenUtils.getJwtAccessToken(user, refreshTokenId, ipAddress);
+        String refreshToken = TokenUtils.getJwtRefreshToken(ipAddress);
 
         // 리프레시 토큰 저장
         try{
@@ -121,6 +124,22 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             .path("/")
             .maxAge(JWT_TOKEN_COOKIE_EXPIRATION)
             .build();
+
+        // CSRF 토큰 생성
+        String csrfToken = CsrfTokenUtils.getCsrfToken();
+        String csrfJwtToken = CsrfTokenUtils.getCsrfJwtToken(csrfToken);
+
+        ResponseCookie csrfCookie = ResponseCookie.from("csrf_token", csrfToken)
+            .httpOnly(true)
+            .path("/")
+            .maxAge(CSRF_TOKEN_COOKIE_EXPIRATION)
+            .build();
+
+        ResponseCookie csrfJwtCookie = ResponseCookie.from("csrf_jwt", csrfJwtToken)
+            .httpOnly(true)
+            .path("/")
+            .maxAge(CSRF_TOKEN_COOKIE_EXPIRATION)
+            .build();
         
         Message message = new Message();
         message.setMessage("success");
@@ -130,6 +149,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         
         response.setStatus(HttpStatus.OK.value());
         response.addHeader(HttpHeaders.SET_COOKIE, tokenCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, csrfCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, csrfJwtCookie.toString());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(msg);
         response.getWriter().flush();
@@ -139,16 +160,20 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException failed) throws IOException, ServletException {
 
-        String errorType = request.getAttribute("exception-type").toString();
+        String errorType = request.getAttribute("exception-type") != null ? request.getAttribute("exception-type").toString() : failed.getLocalizedMessage();
 
         Message message = new Message();
 
         if(errorType.equals("LOGIN_ERROR")) {
             message.setMemo("email not exist or password not matched.");
         } else if(errorType.equals("INPUT_ERROR")) {
-            message.setMemo("input error.");
+            message.setMemo("input value error.");
         } else if(errorType.equals("METHOD_ERROR")) {
             message.setMemo(request.getMethod() + " method not supported.");
+        } else if(failed.getLocalizedMessage().equals("PASSWORD_ERROR")) {
+            message.setMemo("password is not correct.");
+        } else {
+            message.setMemo("undefined error.");
         }
 
         message.setMessage(errorType);
@@ -179,5 +204,26 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private void deleteOldRefreshTokenForUser(UUID userId) {
         refreshTokenRepository.deleteOldRefreshTokenForUser(userId.toString());
     }
-    
+
+    private String getClientIpAddress(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+
+        if (ip == null) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (ip == null) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (ip == null) {
+            ip = request.getRemoteAddr();
+        }
+
+        return ip;
+    }
 }

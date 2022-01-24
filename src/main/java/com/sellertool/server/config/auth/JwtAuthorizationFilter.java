@@ -11,6 +11,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.sellertool.server.config.csrf.CsrfTokenUtils;
+import com.sellertool.server.domain.exception.dto.AccessDeniedPermissionException;
 import com.sellertool.server.domain.refresh_token.model.entity.RefreshTokenEntity;
 import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
 import com.sellertool.server.domain.user.model.entity.UserEntity;
@@ -41,6 +43,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     private String refreshTokenSecret;
 
     final static Integer JWT_TOKEN_COOKIE_EXPIRATION = 5*24*60*60; // seconds - 5일
+    final static Integer CSRF_TOKEN_COOKIE_EXPIRATION = 5*24*60*60; // seconds - 5일
 
     public JwtAuthorizationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
         String accessTokenSecret, String refreshTokenSecret) {
@@ -55,6 +58,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         final Cookie jwtCookie = WebUtils.getCookie(request, "st_actoken");
+        String ipAddress = this.getClientIpAddress(request);
 
         // cookied에 액세스토큰 정보가 없다면 체인을 타게 한다
         if(jwtCookie == null) {
@@ -67,17 +71,25 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
         try{
             // 액세스 토큰이 유효한 경우 claim에 있는 정보를 그대로 저장
             Claims claims = Jwts.parser().setSigningKey(accessTokenSecret).parseClaimsJws(accessToken).getBody();
-            
+
+            // 요청된 client ip 주소가 기존의 것과 다르다면
+            if (!ipAddress.equals(claims.get("ip"))) {
+                throw new AccessDeniedPermissionException("This is not a valid user's IP address.");
+            }
+
             UserEntity userEntity = UserEntity.builder()
                 .id(UUID.fromString(claims.get("id").toString()))
                 .email(claims.get("email").toString())
                 .roles(claims.get("roles").toString())
-                .name(claims.get("name").toString())
                 .build();
 
             this.saveAuthenticationToSecurityContextHolder(userEntity);
-        } catch(ExpiredJwtException e) {
-            // 액세스 토큰이 만료된 경우 리프레시 토큰을 확인해 액세스 토큰 발급 여부 결정
+        } catch(ExpiredJwtException e) {    // 액세스 토큰이 만료된 경우 리프레시 토큰을 확인해 액세스 토큰 발급 여부 결정
+
+            // 요청된 client ip 주소가 기존의 것과 다르다면
+            if(!ipAddress.equals(e.getClaims().get("ip"))) {
+                throw new AccessDeniedPermissionException("This is not a valid user's IP address.");
+            }
 
             // 리프레시 토큰 조회 - 액세스 클레임에서 refreshTokenId에 대응하는 RefreshToken값 조회
             Optional<RefreshTokenEntity> refreshTokenEntityOpt = refreshTokenRepository.findById(UUID.fromString(e.getClaims().get("refreshTokenId").toString()));
@@ -90,13 +102,11 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
                 UserEntity userEntity = UserEntity.builder()
                         .id(UUID.fromString(claims.get("id").toString()))
                         .email(claims.get("email").toString())
-                        .roles(claims.get("roles").toString())
-                        .name(claims.get("name").toString())
                         .build();
 
                 // 새로운 액세스 토큰과 리프레시 토큰을 발급
-                String newAccessToken = tokenUtils.getJwtAccessToken(userEntity, refreshTokenEntityOpt.get().getId());
-                String newRefreshToken = tokenUtils.getJwtRefreshToken();
+                String newAccessToken = tokenUtils.getJwtAccessToken(userEntity, refreshTokenEntityOpt.get().getId(), ipAddress);
+                String newRefreshToken = tokenUtils.getJwtRefreshToken(ipAddress);
 
                 // DB에 저장된 리프레시 토큰을 새로운 리프레시 토큰으로 업데이트
                 refreshTokenRepository.findById(refreshTokenEntityOpt.get().getId()).ifPresent(r -> {
@@ -114,13 +124,32 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
                         .maxAge(JWT_TOKEN_COOKIE_EXPIRATION)
                         .build();
 
+                // CSRF 토큰 생성
+                String csrfToken = CsrfTokenUtils.getCsrfToken();
+                String csrfJwtToken = CsrfTokenUtils.getCsrfJwtToken(csrfToken);
+
+                ResponseCookie csrfCookie = ResponseCookie.from("csrf_token", csrfToken)
+                        .httpOnly(true)
+                        .path("/")
+                        .maxAge(CSRF_TOKEN_COOKIE_EXPIRATION)
+                        .build();
+
+                ResponseCookie csrfJwtCookie = ResponseCookie.from("csrf_jwt", csrfJwtToken)
+                        .httpOnly(true)
+                        .path("/")
+                        .maxAge(CSRF_TOKEN_COOKIE_EXPIRATION)
+                        .build();
+
                 response.addHeader(HttpHeaders.SET_COOKIE, tokenCookie.toString());
-                
+                response.addHeader(HttpHeaders.SET_COOKIE, csrfCookie.toString());
+                response.addHeader(HttpHeaders.SET_COOKIE, csrfJwtCookie.toString());
+
                 this.saveAuthenticationToSecurityContextHolder(userEntity);
             }
-        } catch(JwtException e) {
-            // 토큰 에러
+        } catch(JwtException e) {   // 토큰 에러
             log.error("JWT Token error.");
+        } catch(AccessDeniedPermissionException e) {    // 요청된 client ip 주소가 기존의 것과 다르다면
+            log.error("This is not a valid user's IP address.");
         }
 
         chain.doFilter(request, response);
@@ -132,5 +161,27 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
                 
         // Authentication 객체 저장
         SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+    
+    private String getClientIpAddress(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+
+        if (ip == null) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (ip == null) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (ip == null) {
+            ip = request.getRemoteAddr();
+        }
+
+        return ip;
     }
 }

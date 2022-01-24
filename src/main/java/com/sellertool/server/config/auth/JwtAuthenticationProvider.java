@@ -29,7 +29,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 
         // matches(입력값+salt를 인코딩한 값, DB에 인코딩되어 저장된 비밀번호)이 다르다면
         if(!passwordEncoder.matches(password, principalDetails.getPassword())) {
-            throw new BadCredentialsException(principalDetails.getUsername() + " Invalid password.");
+            throw new BadCredentialsException("PASSWORD_ERROR");
         }
         
         return new UsernamePasswordAuthenticationToken(principalDetails, password, principalDetails.getAuthorities());

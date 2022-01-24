@@ -28,21 +28,22 @@ public class TokenUtils {
     final static Integer JWT_TOKEN_EXPIRATION = 20*60*1000;  // milliseconds - 20분
     final static Integer REFRESH_TOKEN_JWT_EXPIRATION = 5*24*60*60*1000;   // milliseconds - 5일
 
-    public static String getJwtAccessToken(UserEntity userEntity, UUID refreshTokenId) {
+    public static String getJwtAccessToken(UserEntity userEntity, UUID refreshTokenId, String ipAddress) {
         JwtBuilder builder = Jwts.builder()
             .setSubject(userEntity.getEmail() + "JWT_ACT")
             .setHeader(createHeader())
-            .setClaims(createClaims(userEntity, refreshTokenId))
+            .setClaims(createClaims(userEntity, refreshTokenId, ipAddress))
             .setExpiration(createTokenExpiration(JWT_TOKEN_EXPIRATION))
             .signWith(SignatureAlgorithm.HS256, createSigningKey(accessTokenSecret));
 
         return builder.compact();
     }
 
-    public static String getJwtRefreshToken() {
+    public static String getJwtRefreshToken(String ipAddress) {
         JwtBuilder builder = Jwts.builder()
             .setSubject("JWT_RFT")
             .setHeader(createHeader())
+            .setClaims(createRefreshTokenClaims(ipAddress))
             .setExpiration(createTokenExpiration(REFRESH_TOKEN_JWT_EXPIRATION))
             .signWith(SignatureAlgorithm.HS256, createSigningKey(refreshTokenSecret));
         
@@ -59,13 +60,19 @@ public class TokenUtils {
     }
 
     // JWT Palyod
-    private static Map<String, Object> createClaims(UserEntity userEntity, UUID refreshTokenId) {
+    private static Map<String, Object> createClaims(UserEntity userEntity, UUID refreshTokenId, String ipAddress) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", userEntity.getId());
         claims.put("email", userEntity.getEmail());
         claims.put("roles", userEntity.getRoles());
-        claims.put("name", userEntity.getName());
+        claims.put("ip", ipAddress);
         claims.put("refreshTokenId", refreshTokenId);
+        return claims;
+    }
+
+    private static Map<String, Object> createRefreshTokenClaims(String ipAddress) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("ip", ipAddress);
         return claims;
     }
 
