@@ -4,7 +4,6 @@ import com.sellertool.server.config.auth.JwtAuthenticationFilter;
 import com.sellertool.server.config.auth.JwtAuthenticationProvider;
 import com.sellertool.server.config.auth.JwtAuthorizationFilter;
 import com.sellertool.server.config.auth.PrincipalDetailsService;
-import com.sellertool.server.config.csrf.CsrfAuthenticationFilter;
 import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
 import com.sellertool.server.domain.user.model.repository.UserRepository;
 
@@ -38,12 +37,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Value("${jwt.refresh.secret")
     private String refreshTokenSecret;
-
-    @Value("${csrf.token.secret}")
-    private String csrfTokenSecret;
-
-    @Value("${csrf.jwt.secret}")
-    private String csrfJwtSecret;
     
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -72,9 +65,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .formLogin().disable()
                 .httpBasic().disable()
                 .csrf().disable()
-                .addFilterBefore(new JwtAuthenticationFilter(authenticationManager(), userRepository, refreshTokenRepository, accessTokenSecret, refreshTokenSecret, csrfTokenSecret, csrfJwtSecret), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthenticationFilter(authenticationManager(), userRepository, refreshTokenRepository, accessTokenSecret, refreshTokenSecret), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtAuthorizationFilter(authenticationManager(), userRepository, refreshTokenRepository, accessTokenSecret, refreshTokenSecret), UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(new CsrfAuthenticationFilter(authenticationManager(), csrfTokenSecret, csrfJwtSecret), UsernamePasswordAuthenticationFilter.class)
             ;
     }
 

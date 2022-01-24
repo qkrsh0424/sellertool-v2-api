@@ -11,7 +11,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.sellertool.server.config.csrf.CsrfTokenUtils;
 import com.sellertool.server.domain.exception.dto.AccessDeniedPermissionException;
 import com.sellertool.server.domain.refresh_token.model.entity.RefreshTokenEntity;
 import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
@@ -43,7 +42,6 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     private String refreshTokenSecret;
 
     final static Integer JWT_TOKEN_COOKIE_EXPIRATION = 5*24*60*60; // seconds - 5일
-    final static Integer CSRF_TOKEN_COOKIE_EXPIRATION = 5*24*60*60; // seconds - 5일
 
     public JwtAuthorizationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
         String accessTokenSecret, String refreshTokenSecret) {
@@ -124,26 +122,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
                         .maxAge(JWT_TOKEN_COOKIE_EXPIRATION)
                         .build();
 
-                // CSRF 토큰 생성
-                String csrfToken = CsrfTokenUtils.getCsrfToken();
-                String csrfJwtToken = CsrfTokenUtils.getCsrfJwtToken(csrfToken);
-
-                ResponseCookie csrfCookie = ResponseCookie.from("csrf_token", csrfToken)
-                        .httpOnly(true)
-                        .path("/")
-                        .maxAge(CSRF_TOKEN_COOKIE_EXPIRATION)
-                        .build();
-
-                ResponseCookie csrfJwtCookie = ResponseCookie.from("csrf_jwt", csrfJwtToken)
-                        .httpOnly(true)
-                        .path("/")
-                        .maxAge(CSRF_TOKEN_COOKIE_EXPIRATION)
-                        .build();
-
                 response.addHeader(HttpHeaders.SET_COOKIE, tokenCookie.toString());
-                response.addHeader(HttpHeaders.SET_COOKIE, csrfCookie.toString());
-                response.addHeader(HttpHeaders.SET_COOKIE, csrfJwtCookie.toString());
-
                 this.saveAuthenticationToSecurityContextHolder(userEntity);
             }
         } catch(JwtException e) {   // 토큰 에러

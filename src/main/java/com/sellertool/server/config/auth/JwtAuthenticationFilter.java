@@ -11,14 +11,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sellertool.server.config.csrf.CsrfTokenUtils;
 import com.sellertool.server.domain.message.model.dto.Message;
 import com.sellertool.server.domain.refresh_token.model.entity.RefreshTokenEntity;
 import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
 import com.sellertool.server.domain.user.model.entity.UserEntity;
 import com.sellertool.server.domain.user.model.repository.UserRepository;
 
-import org.springframework.boot.web.server.Cookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -38,18 +36,15 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     
     private UserRepository userRepository;
     private TokenUtils tokenUtils;
-    private CsrfTokenUtils csrfTokenUtils;
     private RefreshTokenRepository refreshTokenRepository;
 
     final static Integer JWT_TOKEN_COOKIE_EXPIRATION = 5*24*60*60; // seconds - 5일
-    final static Integer CSRF_TOKEN_COOKIE_EXPIRATION = 5*24*60*60; // seconds - 5일
 
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
-    String accessTokenSecret, String refreshTokenSecret, String csrfTokenSecret, String csrfJwtSecret) {
+    String accessTokenSecret, String refreshTokenSecret) {
         super.setAuthenticationManager(authenticationManager);
         this.userRepository = userRepository;
         this.tokenUtils = new TokenUtils(accessTokenSecret, refreshTokenSecret);
-        this.csrfTokenUtils = new CsrfTokenUtils(csrfTokenSecret, csrfJwtSecret);
         this.refreshTokenRepository = refreshTokenRepository;
 
         this.setFilterProcessesUrl("/api/v1/user/login");
@@ -124,22 +119,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             .path("/")
             .maxAge(JWT_TOKEN_COOKIE_EXPIRATION)
             .build();
-
-        // CSRF 토큰 생성
-        String csrfToken = CsrfTokenUtils.getCsrfToken();
-        String csrfJwtToken = CsrfTokenUtils.getCsrfJwtToken(csrfToken);
-
-        ResponseCookie csrfCookie = ResponseCookie.from("csrf_token", csrfToken)
-            .httpOnly(true)
-            .path("/")
-            .maxAge(CSRF_TOKEN_COOKIE_EXPIRATION)
-            .build();
-
-        ResponseCookie csrfJwtCookie = ResponseCookie.from("csrf_jwt", csrfJwtToken)
-            .httpOnly(true)
-            .path("/")
-            .maxAge(CSRF_TOKEN_COOKIE_EXPIRATION)
-            .build();
         
         Message message = new Message();
         message.setMessage("success");
@@ -149,8 +128,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         
         response.setStatus(HttpStatus.OK.value());
         response.addHeader(HttpHeaders.SET_COOKIE, tokenCookie.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, csrfCookie.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, csrfJwtCookie.toString());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(msg);
         response.getWriter().flush();
