@@ -1,4 +1,4 @@
-package com.sellertool.server.config.auth;
+package com.sellertool.server.utils;
 
 import java.security.Key;
 import java.util.Date;
@@ -7,14 +7,20 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.crypto.spec.SecretKeySpec;
+import javax.servlet.http.Cookie;
 import javax.xml.bind.DatatypeConverter;
 
 import com.sellertool.server.domain.user.model.entity.UserEntity;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class TokenUtils {
     private static String accessTokenSecret;
     private static String refreshTokenSecret;
@@ -24,16 +30,12 @@ public class TokenUtils {
         this.refreshTokenSecret = refreshTokenSecret;
     }
 
-    // final static Integer JWT_TOKEN_EXPIRATION = 1*1000;  // milliseconds - 1분
-    final static Integer JWT_TOKEN_EXPIRATION = 20*60*1000;  // milliseconds - 20분
-    final static Integer REFRESH_TOKEN_JWT_EXPIRATION = 5*24*60*60*1000;   // milliseconds - 5일
-
     public static String getJwtAccessToken(UserEntity userEntity, UUID refreshTokenId, String ipAddress) {
         JwtBuilder builder = Jwts.builder()
             .setSubject(userEntity.getEmail() + "JWT_ACT")
             .setHeader(createHeader())
             .setClaims(createClaims(userEntity, refreshTokenId, ipAddress))
-            .setExpiration(createTokenExpiration(JWT_TOKEN_EXPIRATION))
+            .setExpiration(createTokenExpiration(JwtExpireTimeInterface.JWT_TOKEN_EXPIRATION))
             .signWith(SignatureAlgorithm.HS256, createSigningKey(accessTokenSecret));
 
         return builder.compact();
@@ -44,7 +46,7 @@ public class TokenUtils {
             .setSubject("JWT_RFT")
             .setHeader(createHeader())
             .setClaims(createRefreshTokenClaims(ipAddress))
-            .setExpiration(createTokenExpiration(REFRESH_TOKEN_JWT_EXPIRATION))
+            .setExpiration(createTokenExpiration(JwtExpireTimeInterface.REFRESH_TOKEN_JWT_EXPIRATION))
             .signWith(SignatureAlgorithm.HS256, createSigningKey(refreshTokenSecret));
         
         return builder.compact();
@@ -84,5 +86,27 @@ public class TokenUtils {
     private static Key createSigningKey(String tokenSecret) {
         byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(tokenSecret);
         return new SecretKeySpec(apiKeySecretBytes, SignatureAlgorithm.HS256.getJcaName()); 
+    }
+
+    public static boolean isValidToken(Cookie jwtCookie) {
+
+        String accessToken = jwtCookie.getValue();
+
+        try {
+            Claims claims = Jwts.parser().setSigningKey(accessTokenSecret).parseClaimsJws(accessToken).getBody();
+            log.info("expireTime :" + claims.getExpiration());
+            log.info("email :" + claims.get("email"));
+            log.info("roles :" + claims.get("roles"));
+            return true;
+        } catch (ExpiredJwtException exception) {
+            log.error("Token Expired");
+            return false;
+        } catch (JwtException exception) {
+            log.error("Token Tampered");
+            return false;
+        } catch (NullPointerException exception) {
+            log.error("Token is null");
+            return false;
+        }
     }
 }

@@ -11,11 +11,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sellertool.server.domain.exception.dto.InvalidUserAuthException;
 import com.sellertool.server.domain.message.model.dto.Message;
 import com.sellertool.server.domain.refresh_token.model.entity.RefreshTokenEntity;
 import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
 import com.sellertool.server.domain.user.model.entity.UserEntity;
 import com.sellertool.server.domain.user.model.repository.UserRepository;
+import com.sellertool.server.utils.JwtExpireTimeInterface;
+import com.sellertool.server.utils.TokenUtils;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -38,8 +41,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private TokenUtils tokenUtils;
     private RefreshTokenRepository refreshTokenRepository;
 
-    final static Integer JWT_TOKEN_COOKIE_EXPIRATION = 5*24*60*60; // seconds - 5일
-
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
     String accessTokenSecret, String refreshTokenSecret) {
         super.setAuthenticationManager(authenticationManager);
@@ -55,7 +56,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         final UsernamePasswordAuthenticationToken authToken;
 
-        // POST 메소드가 아니면 에러처리
+        // 로그인 메소드 POST로 제한
         if(!request.getMethod().equals("POST")) {
             request.setAttribute("exception-type", "METHOD_ERROR");
             throw new AuthenticationServiceException("Authentication method not supported: " + request.getMethod());
@@ -102,6 +103,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             this.saveRefreshToken(user, refreshTokenId, refreshToken);
         }catch(Exception e){
             log.error("refresh token DB save error.");
+            throw new AuthenticationServiceException("refresh token DB save error.");
         }
 
         // 한 유저에게 발급된 리프레시 토큰이 특정 개수보다 많다면 리프레시 토큰 삭제
@@ -109,6 +111,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             this.deleteOldRefreshTokenForUser(user.getId());
         }catch(Exception e){
             log.error("refresh token DB delete error.");
+            throw new AuthenticationServiceException("refresh token DB delete error.");
         }
 
         ResponseCookie tokenCookie = ResponseCookie.from("st_actoken", accessToken)
@@ -116,8 +119,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             // secure true설정을 하면 https가 아닌 통신에는 쿠키를 전송하지 않음
             // .secure(true)
             // 모든 경로에 쿠키를 전송 (path값을 /user로 지정하면 /user와 /user의 하위경로로만 쿠키를 전송)
+            .sameSite("Strict")
             .path("/")
-            .maxAge(JWT_TOKEN_COOKIE_EXPIRATION)
+            .maxAge(JwtExpireTimeInterface.JWT_TOKEN_COOKIE_EXPIRATION)
             .build();
         
         Message message = new Message();
@@ -125,7 +129,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         message.setStatus(HttpStatus.OK);
 
         String msg = new ObjectMapper().writeValueAsString(message);
-        
         response.setStatus(HttpStatus.OK.value());
         response.addHeader(HttpHeaders.SET_COOKIE, tokenCookie.toString());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -140,7 +143,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         String errorType = request.getAttribute("exception-type") != null ? request.getAttribute("exception-type").toString() : failed.getLocalizedMessage();
 
         Message message = new Message();
-
         if(errorType.equals("LOGIN_ERROR")) {
             message.setMemo("email not exist or password not matched.");
         } else if(errorType.equals("INPUT_ERROR")) {
@@ -152,12 +154,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         } else {
             message.setMemo("undefined error.");
         }
-
         message.setMessage(errorType);
-        message.setStatus(HttpStatus.UNAUTHORIZED);
+        message.setStatus(HttpStatus.FORBIDDEN);
 
         String msg = new ObjectMapper().writeValueAsString(message);
-        
         response.setStatus(message.getStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(msg);

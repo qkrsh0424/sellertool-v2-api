@@ -31,7 +31,6 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         if(!passwordEncoder.matches(password, principalDetails.getPassword())) {
             throw new BadCredentialsException("PASSWORD_ERROR");
         }
-        
         return new UsernamePasswordAuthenticationToken(principalDetails, password, principalDetails.getAuthorities());
     }
 

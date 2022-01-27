@@ -3,7 +3,8 @@ package com.sellertool.server.config.security;
 import com.sellertool.server.config.auth.JwtAuthenticationFilter;
 import com.sellertool.server.config.auth.JwtAuthenticationProvider;
 import com.sellertool.server.config.auth.JwtAuthorizationFilter;
-import com.sellertool.server.config.auth.PrincipalDetailsService;
+import com.sellertool.server.config.csrf.CsrfAuthenticationFilter;
+import com.sellertool.server.config.referer.RefererAuthenticationFilter;
 import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
 import com.sellertool.server.domain.user.model.repository.UserRepository;
 
@@ -28,7 +29,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private final PrincipalDetailsService principalDetailsService;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
 
@@ -37,6 +37,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Value("${jwt.refresh.secret")
     private String refreshTokenSecret;
+
+    @Value("${csrf.token.secret}")
+    private String csrfTokenSecret;
     
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -65,8 +68,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .formLogin().disable()
                 .httpBasic().disable()
                 .csrf().disable()
+                .addFilterBefore(new CsrfAuthenticationFilter(authenticationManager(), csrfTokenSecret), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new RefererAuthenticationFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtAuthenticationFilter(authenticationManager(), userRepository, refreshTokenRepository, accessTokenSecret, refreshTokenSecret), UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(new JwtAuthorizationFilter(authenticationManager(), userRepository, refreshTokenRepository, accessTokenSecret, refreshTokenSecret), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthorizationFilter(authenticationManager(), refreshTokenRepository, accessTokenSecret, refreshTokenSecret), UsernamePasswordAuthenticationFilter.class)
             ;
     }
 
@@ -76,7 +81,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     // h2 setting 시에는 시큐리티를 무시한다.
-    public void configure(WebSecurity web)throws Exception{
+    public void configure(WebSecurity web)throws Exception {
         web.ignoring().antMatchers("/h2-console/**");
         web.httpFirewall(defaultHttpFirewall());
     }
@@ -84,10 +89,5 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public HttpFirewall defaultHttpFirewall() {
         return new DefaultHttpFirewall();
-    }
-
-    @Bean
-    public JwtAuthenticationProvider authenticationProvider() {
-        return new JwtAuthenticationProvider(principalDetailsService, passwordEncoder());
     }
 }

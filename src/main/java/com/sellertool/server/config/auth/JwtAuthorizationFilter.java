@@ -15,7 +15,8 @@ import com.sellertool.server.domain.exception.dto.AccessDeniedPermissionExceptio
 import com.sellertool.server.domain.refresh_token.model.entity.RefreshTokenEntity;
 import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
 import com.sellertool.server.domain.user.model.entity.UserEntity;
-import com.sellertool.server.domain.user.model.repository.UserRepository;
+import com.sellertool.server.utils.JwtExpireTimeInterface;
+import com.sellertool.server.utils.TokenUtils;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -35,18 +36,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     
-    private UserRepository userRepository;
     private TokenUtils tokenUtils;
     private RefreshTokenRepository refreshTokenRepository;
     private String accessTokenSecret;
     private String refreshTokenSecret;
 
-    final static Integer JWT_TOKEN_COOKIE_EXPIRATION = 5*24*60*60; // seconds - 5일
-
-    public JwtAuthorizationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
+    public JwtAuthorizationFilter(AuthenticationManager authenticationManager, RefreshTokenRepository refreshTokenRepository,
         String accessTokenSecret, String refreshTokenSecret) {
         super(authenticationManager);
-        this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.accessTokenSecret = accessTokenSecret;
         this.refreshTokenSecret = refreshTokenSecret;
@@ -58,7 +55,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
         final Cookie jwtCookie = WebUtils.getCookie(request, "st_actoken");
         String ipAddress = this.getClientIpAddress(request);
 
-        // cookied에 액세스토큰 정보가 없다면 체인을 타게 한다
+        // cookie에 액세스토큰 정보가 없다면 체인을 타게 한다
         if(jwtCookie == null) {
             chain.doFilter(request, response);
             return;
@@ -70,7 +67,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             // 액세스 토큰이 유효한 경우 claim에 있는 정보를 그대로 저장
             Claims claims = Jwts.parser().setSigningKey(accessTokenSecret).parseClaimsJws(accessToken).getBody();
 
-            // 요청된 client ip 주소가 기존의 것과 다르다면
+            // IP Check. 요청된 client ip 주소가 기존의 것과 다르다면
             if (!ipAddress.equals(claims.get("ip"))) {
                 throw new AccessDeniedPermissionException("This is not a valid user's IP address.");
             }
@@ -82,18 +79,16 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
                 .build();
 
             this.saveAuthenticationToSecurityContextHolder(userEntity);
-        } catch(ExpiredJwtException e) {    // 액세스 토큰이 만료된 경우 리프레시 토큰을 확인해 액세스 토큰 발급 여부 결정
-
+        } catch(ExpiredJwtException e) {    // 액세스 토큰이 만료된 경우
             // 요청된 client ip 주소가 기존의 것과 다르다면
             if(!ipAddress.equals(e.getClaims().get("ip"))) {
                 throw new AccessDeniedPermissionException("This is not a valid user's IP address.");
             }
 
-            // 리프레시 토큰 조회 - 액세스 클레임에서 refreshTokenId에 대응하는 RefreshToken값 조회
+            // 리프레시 토큰을 조회해 액세스 토큰 발급 여부 결정 - 액세스 클레임에서 refreshTokenId에 대응하는 RefreshToken값 조회
             Optional<RefreshTokenEntity> refreshTokenEntityOpt = refreshTokenRepository.findById(UUID.fromString(e.getClaims().get("refreshTokenId").toString()));
             
             Jwts.parser().setSigningKey(refreshTokenSecret).parseClaimsJws(refreshTokenEntityOpt.get().getRefreshToken()).getBody();
-
             Claims claims = e.getClaims();
 
             if(refreshTokenEntityOpt != null) {
@@ -118,8 +113,9 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
                 ResponseCookie tokenCookie = ResponseCookie.from("st_actoken", newAccessToken)
                         .httpOnly(true)
                         // .secure(true)
+                        .sameSite("Strict")
                         .path("/")
-                        .maxAge(JWT_TOKEN_COOKIE_EXPIRATION)
+                        .maxAge(JwtExpireTimeInterface.JWT_TOKEN_COOKIE_EXPIRATION)
                         .build();
 
                 response.addHeader(HttpHeaders.SET_COOKIE, tokenCookie.toString());
@@ -130,7 +126,6 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
         } catch(AccessDeniedPermissionException e) {    // 요청된 client ip 주소가 기존의 것과 다르다면
             log.error("This is not a valid user's IP address.");
         }
-
         chain.doFilter(request, response);
     }
 

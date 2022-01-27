@@ -16,8 +16,9 @@ public class CorsFilterConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        // TODO :: credentials설정을 하지 않았을 때 비교해보기.
         // cookie를 요청에 포함하기 위해 credentials설정.
+        // TODO :: credentials설정을 하지 않았을 때와 비교
+        // TODO :: setAllowedOrigins는 추후에 추가
         config.setAllowCredentials(true);
         config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8081"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
