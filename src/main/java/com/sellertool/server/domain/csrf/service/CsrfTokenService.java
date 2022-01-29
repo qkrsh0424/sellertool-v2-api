@@ -5,7 +5,7 @@ import java.util.UUID;
 import javax.servlet.http.HttpServletResponse;
 
 import com.sellertool.server.utils.CsrfTokenUtils;
-import com.sellertool.server.utils.JwtExpireTimeInterface;
+import com.sellertool.server.utils.ExpireTimeInterface;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -31,7 +31,7 @@ public class CsrfTokenService {
             .httpOnly(true)
             .sameSite("Strict")
             .path("/")
-            .maxAge(JwtExpireTimeInterface.CSRF_TOKEN_COOKIE_EXPIRATION)
+            .maxAge(ExpireTimeInterface.CSRF_TOKEN_COOKIE_EXPIRATION)
             .build();
 
         

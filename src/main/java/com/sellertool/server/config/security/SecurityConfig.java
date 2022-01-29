@@ -3,6 +3,7 @@ package com.sellertool.server.config.security;
 import com.sellertool.server.config.auth.JwtAuthenticationFilter;
 import com.sellertool.server.config.auth.JwtAuthenticationProvider;
 import com.sellertool.server.config.auth.JwtAuthorizationFilter;
+import com.sellertool.server.config.auth.PrincipalDetailsService;
 import com.sellertool.server.config.csrf.CsrfAuthenticationFilter;
 import com.sellertool.server.config.referer.RefererAuthenticationFilter;
 import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
@@ -31,6 +32,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final PrincipalDetailsService principalDetailsService;
 
     @Value("${jwt.access.secret}")
     private String accessTokenSecret;
@@ -89,5 +91,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public HttpFirewall defaultHttpFirewall() {
         return new DefaultHttpFirewall();
+    }
+
+    @Bean
+    public JwtAuthenticationProvider jwtAuthenticationProvider() {
+        return new JwtAuthenticationProvider(principalDetailsService, passwordEncoder());
     }
 }

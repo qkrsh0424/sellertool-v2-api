@@ -15,7 +15,7 @@ import com.sellertool.server.domain.exception.dto.AccessDeniedPermissionExceptio
 import com.sellertool.server.domain.refresh_token.model.entity.RefreshTokenEntity;
 import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
 import com.sellertool.server.domain.user.model.entity.UserEntity;
-import com.sellertool.server.utils.JwtExpireTimeInterface;
+import com.sellertool.server.utils.ExpireTimeInterface;
 import com.sellertool.server.utils.TokenUtils;
 
 import org.springframework.http.HttpHeaders;
@@ -115,7 +115,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
                         // .secure(true)
                         .sameSite("Strict")
                         .path("/")
-                        .maxAge(JwtExpireTimeInterface.JWT_TOKEN_COOKIE_EXPIRATION)
+                        .maxAge(ExpireTimeInterface.JWT_TOKEN_COOKIE_EXPIRATION)
                         .build();
 
                 response.addHeader(HttpHeaders.SET_COOKIE, tokenCookie.toString());

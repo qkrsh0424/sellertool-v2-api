@@ -1,6 +1,5 @@
 package com.sellertool.server.domain.refresh_token.model.repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 

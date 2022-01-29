@@ -35,7 +35,7 @@ public class TokenUtils {
             .setSubject(userEntity.getEmail() + "JWT_ACT")
             .setHeader(createHeader())
             .setClaims(createClaims(userEntity, refreshTokenId, ipAddress))
-            .setExpiration(createTokenExpiration(JwtExpireTimeInterface.JWT_TOKEN_EXPIRATION))
+            .setExpiration(createTokenExpiration(ExpireTimeInterface.JWT_TOKEN_EXPIRATION))
             .signWith(SignatureAlgorithm.HS256, createSigningKey(accessTokenSecret));
 
         return builder.compact();
@@ -46,7 +46,7 @@ public class TokenUtils {
             .setSubject("JWT_RFT")
             .setHeader(createHeader())
             .setClaims(createRefreshTokenClaims(ipAddress))
-            .setExpiration(createTokenExpiration(JwtExpireTimeInterface.REFRESH_TOKEN_JWT_EXPIRATION))
+            .setExpiration(createTokenExpiration(ExpireTimeInterface.REFRESH_TOKEN_JWT_EXPIRATION))
             .signWith(SignatureAlgorithm.HS256, createSigningKey(refreshTokenSecret));
         
         return builder.compact();

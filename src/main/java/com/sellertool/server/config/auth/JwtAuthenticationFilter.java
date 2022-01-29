@@ -11,13 +11,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sellertool.server.domain.exception.dto.InvalidUserAuthException;
 import com.sellertool.server.domain.message.model.dto.Message;
 import com.sellertool.server.domain.refresh_token.model.entity.RefreshTokenEntity;
 import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
 import com.sellertool.server.domain.user.model.entity.UserEntity;
 import com.sellertool.server.domain.user.model.repository.UserRepository;
-import com.sellertool.server.utils.JwtExpireTimeInterface;
+import com.sellertool.server.utils.ExpireTimeInterface;
 import com.sellertool.server.utils.TokenUtils;
 
 import org.springframework.http.HttpHeaders;
@@ -121,7 +120,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             // 모든 경로에 쿠키를 전송 (path값을 /user로 지정하면 /user와 /user의 하위경로로만 쿠키를 전송)
             .sameSite("Strict")
             .path("/")
-            .maxAge(JwtExpireTimeInterface.JWT_TOKEN_COOKIE_EXPIRATION)
+            .maxAge(ExpireTimeInterface.JWT_TOKEN_COOKIE_EXPIRATION)
             .build();
         
         Message message = new Message();
