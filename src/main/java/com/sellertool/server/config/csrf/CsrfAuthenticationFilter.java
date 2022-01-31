@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellertool.server.domain.exception.dto.AccessDeniedPermissionException;
 import com.sellertool.server.domain.message.model.dto.Message;
+import com.sellertool.server.utils.CsrfTokenUtils;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,10 +29,12 @@ import lombok.extern.slf4j.Slf4j;
 public class CsrfAuthenticationFilter extends BasicAuthenticationFilter {
     
     private String csrfTokenSecret;
+    private CsrfTokenUtils csrfTokenUtils;
 
     public CsrfAuthenticationFilter(AuthenticationManager authenticationManager, String csrfTokenSecret) {
         super(authenticationManager);
         this.csrfTokenSecret = csrfTokenSecret;
+        this.csrfTokenUtils = new CsrfTokenUtils(csrfTokenSecret);
     }
 
     @Override
@@ -58,9 +61,9 @@ public class CsrfAuthenticationFilter extends BasicAuthenticationFilter {
         }catch(ExpiredJwtException e) {     // 토큰 만료
             request.setAttribute("exception-type", "CSRF_TOKEN_EXPIRED");
         } catch(JwtException e) {   // 토큰 에러
-            request.setAttribute("exception-type", "TOKEN_ERROR");
+            request.setAttribute("exception-type", "CSRF_TOKEN_ERROR");
         } catch(AccessDeniedPermissionException e) {    // CSRF 토큰값이 다르다면
-            request.setAttribute("exception-type", "ACCESS_DENIED");
+            request.setAttribute("exception-type", "CSRF_ACCESS_DENIED");
         } catch(NullPointerException e) {   // CSRF 쿠키가 존재하지 않는다면
             request.setAttribute("exception-type", "CSRF_COOKIE_ERROR");
         }
@@ -73,9 +76,9 @@ public class CsrfAuthenticationFilter extends BasicAuthenticationFilter {
         Message message = new Message();
         if(errorType.equals("CSRF_TOKEN_EXPIRED")) {
             message.setMemo("CSRF Jwt Token error.");
-        } else if(errorType.equals("TOKEN_ERROR")) {
+        } else if(errorType.equals("CSRF_TOKEN_ERROR")) {
             message.setMemo("JWT Token error.");
-        } else if(errorType.equals("ACCESS_DENIED")) {
+        } else if(errorType.equals("CSRF_ACCESS_DENIED")) {
             message.setMemo("This is not a valid CSRF token.");
         } else if(errorType.equals("CSRF_COOKIE_ERROR")) {
             message.setMemo("CSRF cookie does not exist.");

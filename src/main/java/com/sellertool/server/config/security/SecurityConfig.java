@@ -3,6 +3,7 @@ package com.sellertool.server.config.security;
 import com.sellertool.server.config.auth.JwtAuthenticationFilter;
 import com.sellertool.server.config.auth.JwtAuthenticationProvider;
 import com.sellertool.server.config.auth.JwtAuthorizationFilter;
+import com.sellertool.server.config.auth.JwtLogoutSuccessHandler;
 import com.sellertool.server.config.auth.PrincipalDetailsService;
 import com.sellertool.server.config.csrf.CsrfAuthenticationFilter;
 import com.sellertool.server.config.referer.RefererAuthenticationFilter;
@@ -68,6 +69,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().permitAll()
             .and()
                 .formLogin().disable()
+                .logout()
+                    .logoutUrl("/api/v1/user/logout")
+                    .logoutSuccessHandler(new JwtLogoutSuccessHandler(accessTokenSecret, refreshTokenRepository))
+                .and()
                 .httpBasic().disable()
                 .csrf().disable()
                 .addFilterBefore(new CsrfAuthenticationFilter(authenticationManager(), csrfTokenSecret), UsernamePasswordAuthenticationFilter.class)
