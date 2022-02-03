@@ -28,26 +28,32 @@ public class RefererAuthenticationFilter extends BasicAuthenticationFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-        String referer = request.getHeader("Referer") != null ? request.getHeader("Referer") : null;
+        try {
+            String referer = request.getHeader("Referer") != null ? request.getHeader("Referer") : null;
 
-        // TODO::https만 받도록 설정해야 함. match.group받아오는 것도 변경
-        // String regex = "https:\\/\\/([^:\\/\\s]+)(:([^\\/]*))?((\\/[^\\s/\\/]+)*)?$";
-        String regex = "(http|https):\\/\\/([^:\\/\\s]+)(:([^\\/]*))?((\\/[^\\s/\\/]+)*)?$";
-        Pattern refererPattern = Pattern.compile(regex);
-        Matcher match = refererPattern.matcher(referer);
+            // TODO::https만 받도록 설정해야 함. match.group받아오는 것도 변경
+            // String regex = "https:\\/\\/([^:\\/\\s]+)(:([^\\/]*))?((\\/[^\\s/\\/]+)*)?$";
+            String regex = "(http|https):\\/\\/([^:\\/\\s]+)(:([^\\/]*))?((\\/[^\\s/\\/]+)*)?$";
+            Pattern refererPattern = Pattern.compile(regex);
+            Matcher match = refererPattern.matcher(referer);
 
-        if(!match.find()){
-            // 올바른 url 패턴이 아닌경우
-            request.setAttribute("exception-type", "REFERER_ERROR");
-            this.unsuccessfulRefererFilter(request, response);
-            return;
-        }else {
-            // referer white list에 없는 도메인인 경우
-            if(!refererWhiteList.contains(match.group(2))) {
-                request.setAttribute("exception-type", "REFERER_FORBIDDEN");
+            if (!match.find()) {
+                // 올바른 url 패턴이 아닌경우
+                request.setAttribute("exception-type", "REFERER_ERROR");
                 this.unsuccessfulRefererFilter(request, response);
                 return;
+            } else {
+                // referer white list에 없는 도메인인 경우
+                if (!refererWhiteList.contains(match.group(2))) {
+                    request.setAttribute("exception-type", "REFERER_FORBIDDEN");
+                    this.unsuccessfulRefererFilter(request, response);
+                    return;
+                }
             }
+        } catch (NullPointerException e) {
+            request.setAttribute("exception-type", "REFERER_NOT_FOUND");
+            this.unsuccessfulRefererFilter(request, response);
+            return;
         }
 
         chain.doFilter(request, response);
@@ -61,6 +67,8 @@ public class RefererAuthenticationFilter extends BasicAuthenticationFilter {
             message.setMemo("It is not the right url pattern.");
         }else if(errorType.equals("REFERER_FORBIDDEN")) {
             message.setMemo("This is not an allowed domain.");
+        }else if(errorType.equals("REFERER_NOT_FOUND")) {
+            message.setMemo("Referer not found.");
         }else {
             message.setMemo("undefined error.");
         }
