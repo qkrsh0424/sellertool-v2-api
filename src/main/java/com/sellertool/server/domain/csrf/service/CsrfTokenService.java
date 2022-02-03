@@ -27,15 +27,24 @@ public class CsrfTokenService {
         String csrfTokenId = UUID.randomUUID().toString();
         String csrfJwtToken = CsrfTokenUtils.getCsrfJwtToken(csrfTokenId);
 
-        ResponseCookie csrfJwtCookie = ResponseCookie.from("csrf_token", csrfJwtToken)
+        ResponseCookie csrfJwt = ResponseCookie.from("csrf_jwt", csrfJwtToken)
             .httpOnly(true)
+            .secure(true)
             .sameSite("Strict")
             .path("/")
             .maxAge(ExpireTimeInterface.CSRF_TOKEN_COOKIE_EXPIRATION)
             .build();
 
+        ResponseCookie csrfToken = ResponseCookie.from("csrf_token", csrfTokenId)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(ExpireTimeInterface.CSRF_TOKEN_COOKIE_EXPIRATION)
+                .build();
+
         
-        response.addHeader(HttpHeaders.SET_COOKIE, csrfJwtCookie.toString());
-        response.setHeader("X-XSRF-TOKEN", csrfTokenId);
+        response.addHeader(HttpHeaders.SET_COOKIE, csrfJwt.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, csrfToken.toString());
+//        response.setHeader("X-XSRF-TOKEN", csrfTokenId);
     }
 }

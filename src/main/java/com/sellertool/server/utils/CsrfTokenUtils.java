@@ -31,7 +31,7 @@ public class CsrfTokenUtils {
             .setSubject("CSRF_JWT")
             .setHeader(createHeader())
             .setClaims(createClaims(csrfTokenId))
-            .setExpiration(createTokenExpiration(ExpireTimeInterface.CSRF_TOKEN_COOKIE_EXPIRATION))
+            .setExpiration(createTokenExpiration(ExpireTimeInterface.CSRF_TOKEN_JWT_EXPIRATION))
             .signWith(SignatureAlgorithm.HS256, createSigningKey(csrfJwtSecret));
 
         return builder.compact();

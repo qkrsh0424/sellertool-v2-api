@@ -6,5 +6,7 @@ public interface ExpireTimeInterface {
     final static Integer REFRESH_TOKEN_JWT_EXPIRATION = 5*24*60*60*1000;   // milliseconds - 5일
 
     // final static Integer CSRF_TOKEN_COOKIE_EXPIRATION = 30*60; // seconds - 30분
-    final static Integer CSRF_TOKEN_COOKIE_EXPIRATION = 24*60*60; // seconds - 1일
+    final static Integer CSRF_TOKEN_COOKIE_EXPIRATION = 5; // seconds - 5s
+    final static Integer CSRF_TOKEN_JWT_EXPIRATION = 5*1000;  // milliseconds - 5000ms -> 5s
+
 }

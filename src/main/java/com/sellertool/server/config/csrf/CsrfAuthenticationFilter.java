@@ -25,6 +25,10 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 수정
+ * 1. csrf 쿠키를 두개를 넘겨준다. (1) => csrf_jwt_token : csrf_token 값을 가진 JWT, (2) => csrf_token : UUID
+ */
 @Slf4j
 public class CsrfAuthenticationFilter extends BasicAuthenticationFilter {
     
@@ -46,14 +50,19 @@ public class CsrfAuthenticationFilter extends BasicAuthenticationFilter {
             chain.doFilter(request, response);
             return;
         }
-            
-        try{
-            Cookie csrfCookie = WebUtils.getCookie(request, "csrf_token");
-            String csrfToken = csrfCookie.getValue();
 
-            Claims claims = Jwts.parser().setSigningKey(csrfTokenSecret).parseClaimsJws(csrfToken).getBody();
+        try{
+//            일종의 저장소
+            Cookie csrfJwt = WebUtils.getCookie(request, "csrf_jwt");
+
+            String csrfJwtToken = csrfJwt.getValue();
+//            실제 CSRF 토큰 값
+            String csrfToken = request.getHeader("X-XSRF-TOKEN");
+
+            Claims claims = Jwts.parser().setSigningKey(csrfTokenSecret).parseClaimsJws(csrfJwtToken).getBody();
+
             // Cookie값과 csrf설정 헤더값이 동일하지 않다면
-            if(!claims.get("csrfId").equals(request.getHeader("X-XSRF-TOKEN"))){
+            if(!claims.get("csrfId").equals(csrfToken)){
                 throw new AccessDeniedPermissionException();
             }else{
                 chain.doFilter(request, response);
