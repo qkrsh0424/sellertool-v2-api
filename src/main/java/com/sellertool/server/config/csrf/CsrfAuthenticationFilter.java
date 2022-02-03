@@ -34,6 +34,7 @@ public class CsrfAuthenticationFilter extends BasicAuthenticationFilter {
     public CsrfAuthenticationFilter(AuthenticationManager authenticationManager, String csrfTokenSecret) {
         super(authenticationManager);
         this.csrfTokenSecret = csrfTokenSecret;
+//        생성자로 초기화 시키면 안됨. 스태틱 메서드를 사용할때 csrfTokenSecret을 파라메터로 넣어서 메서드를 불러와야됨.
         this.csrfTokenUtils = new CsrfTokenUtils(csrfTokenSecret);
     }
 
