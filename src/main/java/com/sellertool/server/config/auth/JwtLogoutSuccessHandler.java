@@ -1,7 +1,6 @@
 package com.sellertool.server.config.auth;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.UUID;
 
 import javax.servlet.ServletException;
@@ -12,10 +11,9 @@ import javax.servlet.http.HttpServletResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellertool.server.domain.exception.dto.AccessDeniedPermissionException;
 import com.sellertool.server.domain.message.model.dto.Message;
-import com.sellertool.server.domain.refresh_token.model.entity.RefreshTokenEntity;
 import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
 import com.sellertool.server.utils.CsrfTokenUtils;
-import com.sellertool.server.utils.TokenUtils;
+import com.sellertool.server.utils.AuthTokenUtils;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -27,7 +25,6 @@ import org.springframework.web.util.WebUtils;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,7 +50,7 @@ public class JwtLogoutSuccessHandler implements LogoutSuccessHandler {
             try{
                 accessCookie = WebUtils.getCookie(request, "st_actoken");
 
-                if (!TokenUtils.isValidToken(accessCookie)) {
+                if (!AuthTokenUtils.isValidToken(accessCookie)) {
                     throw new AccessDeniedPermissionException();
                 }
 

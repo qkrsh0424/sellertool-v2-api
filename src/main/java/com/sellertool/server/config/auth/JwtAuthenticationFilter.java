@@ -1,135 +1,126 @@
 package com.sellertool.server.config.auth;
 
-import java.io.IOException;
-import java.util.Date;
-import java.util.Optional;
-import java.util.UUID;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sellertool.server.config.exception.AuthenticationMethodNotAllowedException;
+import com.sellertool.server.domain.message.model.dto.Message;
+import com.sellertool.server.domain.refresh_token.model.entity.RefreshTokenEntity;
+import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
+import com.sellertool.server.domain.user.entity.UserEntity;
+import com.sellertool.server.domain.user.repository.UserRepository;
+import com.sellertool.server.utils.CustomCookieInterface;
+import com.sellertool.server.utils.AuthTokenUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
+import org.springframework.security.authentication.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sellertool.server.domain.message.model.dto.Message;
-import com.sellertool.server.domain.refresh_token.model.entity.RefreshTokenEntity;
-import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
-import com.sellertool.server.domain.user.model.entity.UserEntity;
-import com.sellertool.server.domain.user.model.repository.UserRepository;
-import com.sellertool.server.utils.ExpireTimeInterface;
-import com.sellertool.server.utils.TokenUtils;
-
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseCookie;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationServiceException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.util.Date;
+import java.util.UUID;
 
 @Slf4j
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
-    
+
     private UserRepository userRepository;
-    private TokenUtils tokenUtils;
     private RefreshTokenRepository refreshTokenRepository;
+    private String accessTokenSecret;
+    private String refreshTokenSecret;
+    private boolean postOnly = true;
 
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
-    String accessTokenSecret, String refreshTokenSecret) {
+                                   String accessTokenSecret, String refreshTokenSecret) {
         super.setAuthenticationManager(authenticationManager);
         this.userRepository = userRepository;
-        this.tokenUtils = new TokenUtils(accessTokenSecret, refreshTokenSecret);
         this.refreshTokenRepository = refreshTokenRepository;
+        this.accessTokenSecret = accessTokenSecret;
+        this.refreshTokenSecret = refreshTokenSecret;
 
-        this.setFilterProcessesUrl("/api/v1/user/login");
+        setFilterProcessesUrl("/api/v1/login");
     }
 
     // 로그인 요청 시 실행
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-        final UsernamePasswordAuthenticationToken authToken;
+        System.out.println("========attemptAuthentication========");
 
         // 로그인 메소드 POST로 제한
-        if(!request.getMethod().equals("POST")) {
-            request.setAttribute("exception-type", "METHOD_ERROR");
-            throw new AuthenticationServiceException("Authentication method not supported: " + request.getMethod());
+        if (this.postOnly && !request.getMethod().equals("POST")) {
+            log.error("Authentication method not supported: " + request.getMethod());
+            throw new AuthenticationMethodNotAllowedException("Authentication method not supported: " + request.getMethod());
         }
 
-        try{
-            // request에서 읽어온 값을 json 파싱
+        try {
             UserEntity user = new ObjectMapper().readValue(request.getInputStream(), UserEntity.class);
-
-            Optional<UserEntity> userOpt = userRepository.findByEmail(user.getEmail());
-            if(!userOpt.isPresent()) {
-                request.setAttribute("exception-type", "LOGIN_ERROR");
-
-                // security 로그인 시 아이디와 비밀번호 오류 시 발생하는 오류
-                throw new BadCredentialsException("email not found.");
-            }
-            
-            String fullPassword = user.getPassword() + userOpt.get().getSalt();
-            authToken = new UsernamePasswordAuthenticationToken(user.getEmail(), fullPassword);
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword());
+            return this.getAuthenticationManager().authenticate(authToken);
         } catch (IOException e) {
-            request.setAttribute("exception-type", "INPUT_ERROR");
-            throw new AuthenticationServiceException("input error.");
+            log.error("getAuthenticationManager().authenticate() error.");
+            throw new AuthenticationServiceException("입력하신 아이디 및 패스워드를 다시 확인해 주세요.");
         }
-
-        this.setDetails(request, authToken);
-        // AuthenticationFilter는 생성한 UsernamePasswordToken을 AuthenticationManager에게 전달
-        return this.getAuthenticationManager().authenticate(authToken);
     }
 
     // 로그인 성공 시
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-     FilterChain chain, Authentication authentication) throws IOException, ServletException {
-        UserEntity user = ((PrincipalDetails)authentication.getPrincipal()).getUser();
+                                            FilterChain chain, Authentication authentication) throws IOException, ServletException {
+        System.out.println("========successfulAuthentication========");
+        authentication.getAuthorities().stream().forEach(r -> System.out.println(r.getAuthority()));
+        AuthTokenUtils tokenUtils = new AuthTokenUtils(accessTokenSecret, refreshTokenSecret);
 
+        UserEntity user = ((PrincipalDetails) authentication.getPrincipal()).getUser();
         UUID refreshTokenId = UUID.randomUUID();
 
-        String ipAddress = this.getClientIpAddress(request);
-        String accessToken = TokenUtils.getJwtAccessToken(user, refreshTokenId, ipAddress);
-        String refreshToken = TokenUtils.getJwtRefreshToken(ipAddress);
+        String[] ipAddress = this.getClientIpAddress(request).replaceAll(" ", "").split(",");
+        String clientIp = ipAddress[0];
+
+        String accessToken = tokenUtils.getJwtAccessToken(user.getId(), user.getRoles(), refreshTokenId, clientIp);
+        String refreshToken = tokenUtils.getJwtRefreshToken(user.getId(), user.getRoles(), clientIp);
 
         // 리프레시 토큰 저장
-        try{
+        try {
             this.saveRefreshToken(user, refreshTokenId, refreshToken);
-        }catch(Exception e){
+        } catch (Exception e) {
             log.error("refresh token DB save error.");
-            throw new AuthenticationServiceException("refresh token DB save error.");
+            throw new AuthenticationServiceException("잠시 후 다시 시도해 주세요.");
         }
 
         // 한 유저에게 발급된 리프레시 토큰이 특정 개수보다 많다면 리프레시 토큰 삭제
-        try{
-            this.deleteOldRefreshTokenForUser(user.getId());
-        }catch(Exception e){
+        try {
+            this.deleteOldRefreshTokenForUser(user.getId(), user.getAllowedAccessCount());
+        } catch (Exception e) {
             log.error("refresh token DB delete error.");
-            throw new AuthenticationServiceException("refresh token DB delete error.");
+            throw new AuthenticationServiceException("잠시 후 다시 시도해 주세요.");
         }
 
         ResponseCookie tokenCookie = ResponseCookie.from("st_actoken", accessToken)
-            .httpOnly(true)
-            // secure true설정을 하면 https가 아닌 통신에는 쿠키를 전송하지 않음
-            // .secure(true)
-            // 모든 경로에 쿠키를 전송 (path값을 /user로 지정하면 /user와 /user의 하위경로로만 쿠키를 전송)
-            .sameSite("Strict")
-            .path("/")
-            .maxAge(ExpireTimeInterface.JWT_TOKEN_COOKIE_EXPIRATION)
-            .build();
-        
+                .httpOnly(true)
+                .domain(CustomCookieInterface.COOKIE_DOMAIN)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(CustomCookieInterface.JWT_TOKEN_COOKIE_EXPIRATION)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, tokenCookie.toString());
+
         Message message = new Message();
-        message.setMessage("success");
+
         message.setStatus(HttpStatus.OK);
+        message.setMessage("success");
+        message.setMemo("login");
 
         String msg = new ObjectMapper().writeValueAsString(message);
-        response.setStatus(HttpStatus.OK.value());
-        response.addHeader(HttpHeaders.SET_COOKIE, tokenCookie.toString());
+        response.setStatus(message.getStatus().value());
+        response.setCharacterEncoding("UTF-8");
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(msg);
         response.getWriter().flush();
@@ -137,30 +128,46 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationException failed) throws IOException, ServletException {
+                                              AuthenticationException failed) throws IOException, ServletException {
+        System.out.println("========unsuccessfulAuthentication========");
+        Object exceptionClass = failed.getClass();
 
-        String errorType = request.getAttribute("exception-type") != null ? request.getAttribute("exception-type").toString() : failed.getLocalizedMessage();
-
-        Message message = new Message();
-        if(errorType.equals("LOGIN_ERROR")) {
-            message.setMemo("email not exist or password not matched.");
-        } else if(errorType.equals("INPUT_ERROR")) {
-            message.setMemo("input value error.");
-        } else if(errorType.equals("METHOD_ERROR")) {
-            message.setMemo(request.getMethod() + " method not supported.");
-        } else if(failed.getLocalizedMessage().equals("PASSWORD_ERROR")) {
-            message.setMemo("password is not correct.");
-        } else {
-            message.setMemo("undefined error.");
+        /**
+         * 405
+         */
+        if (
+                exceptionClass.equals(AuthenticationMethodNotAllowedException.class) // 요청 메서드가 POST 가 아님.
+        ) {
+            errorResponse(response, HttpStatus.METHOD_NOT_ALLOWED, "method_not_allowed", failed.getMessage());
+            return;
         }
-        message.setMessage(errorType);
-        message.setStatus(HttpStatus.FORBIDDEN);
 
-        String msg = new ObjectMapper().writeValueAsString(message);
-        response.setStatus(message.getStatus().value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(msg);
-        response.getWriter().flush();
+        /**
+         * 401
+         */
+        if (
+                exceptionClass.equals(UsernameNotFoundException.class) // 계정 없음
+                        || exceptionClass.equals(BadCredentialsException.class) // 비밀번호 불일치
+//                        || exceptionClass.equals(AccountExpiredException.class) // 계정 만료
+//                        || exceptionClass.equals(CredentialsExpiredException.class) // 비밀번호 만료
+//                        || exceptionClass.equals(DisabledException.class) // 계정 비활성화
+//                        || exceptionClass.equals(LockedException.class) // 계정 잠김
+        ) {
+            errorResponse(response, HttpStatus.UNAUTHORIZED, "auth_failed", failed.getMessage());
+            return;
+        }
+
+        /**
+         * 400
+         */
+        if (
+                exceptionClass.equals(AuthenticationServiceException.class) // 각종 서비스 에러
+        ) {
+            errorResponse(response, HttpStatus.BAD_REQUEST, "service_failed", failed.getMessage());
+            return;
+        }
+
+        errorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, "error", "undefined error.");
     }
 
     // Create DB Refresh Token
@@ -177,8 +184,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     }
 
     // DELETE DB Refresh Token
-    private void deleteOldRefreshTokenForUser(UUID userId) {
-        refreshTokenRepository.deleteOldRefreshTokenForUser(userId.toString());
+    private void deleteOldRefreshTokenForUser(UUID userId, Integer allowedAccessCount) {
+        refreshTokenRepository.deleteOldRefreshTokenForUser(userId.toString(), allowedAccessCount);
     }
 
     private String getClientIpAddress(HttpServletRequest request) {
@@ -201,5 +208,20 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         }
 
         return ip;
+    }
+
+    private void errorResponse(HttpServletResponse response, HttpStatus status, String resMessage, String resMemo) throws IOException, ServletException {
+        Message message = new Message();
+
+        message.setStatus(status);
+        message.setMessage(resMessage);
+        message.setMemo(resMemo);
+
+        String msg = new ObjectMapper().writeValueAsString(message);
+        response.setStatus(message.getStatus().value());
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getWriter().write(msg);
+        response.getWriter().flush();
     }
 }

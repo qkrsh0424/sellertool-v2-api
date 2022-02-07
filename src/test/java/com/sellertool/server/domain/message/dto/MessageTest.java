@@ -23,4 +23,5 @@ class MessageTest {
 
         System.out.println(message);
     }
+
 }

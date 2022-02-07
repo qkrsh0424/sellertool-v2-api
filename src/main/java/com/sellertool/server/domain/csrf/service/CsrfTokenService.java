@@ -1,16 +1,14 @@
 package com.sellertool.server.domain.csrf.service;
 
-import java.util.UUID;
-
-import javax.servlet.http.HttpServletResponse;
-
 import com.sellertool.server.utils.CsrfTokenUtils;
-import com.sellertool.server.utils.ExpireTimeInterface;
-
+import com.sellertool.server.utils.CustomCookieInterface;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
+
+import javax.servlet.http.HttpServletResponse;
+import java.util.UUID;
 
 @Service
 public class CsrfTokenService {
@@ -29,17 +27,19 @@ public class CsrfTokenService {
 
         ResponseCookie csrfJwt = ResponseCookie.from("csrf_jwt", csrfJwtToken)
             .httpOnly(true)
+            .domain(CustomCookieInterface.COOKIE_DOMAIN)
             .secure(true)
             .sameSite("Strict")
             .path("/")
-            .maxAge(ExpireTimeInterface.CSRF_TOKEN_COOKIE_EXPIRATION)
+            .maxAge(CustomCookieInterface.CSRF_TOKEN_COOKIE_EXPIRATION)
             .build();
 
         ResponseCookie csrfToken = ResponseCookie.from("csrf_token", csrfTokenId)
                 .secure(true)
+                .domain(CustomCookieInterface.COOKIE_DOMAIN)
                 .sameSite("Strict")
                 .path("/")
-                .maxAge(ExpireTimeInterface.CSRF_TOKEN_COOKIE_EXPIRATION)
+                .maxAge(CustomCookieInterface.CSRF_TOKEN_COOKIE_EXPIRATION)
                 .build();
 
         

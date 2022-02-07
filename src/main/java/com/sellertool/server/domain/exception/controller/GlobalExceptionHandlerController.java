@@ -1,7 +1,6 @@
 package com.sellertool.server.domain.exception.controller;
 
-import com.sellertool.server.domain.exception.dto.AccessDeniedPermissionException;
-import com.sellertool.server.domain.exception.dto.InvalidUserAuthException;
+import com.sellertool.server.domain.exception.dto.*;
 import com.sellertool.server.domain.message.model.dto.Message;
 
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +30,39 @@ public class GlobalExceptionHandlerController {
 
         message.setStatus(HttpStatus.UNAUTHORIZED);
         message.setMessage("invalid_user");
+        message.setMemo(ex.getMessage());
+        return new ResponseEntity<>(message, message.getStatus());
+    }
+
+    @ExceptionHandler(value = {ConflictErrorException.class})
+    public ResponseEntity<?> conflictErrorException(ConflictErrorException ex){
+        Message message = new Message();
+        log.warn("ERROR STACKTRACE => {}", ex.getStackTrace());
+
+        message.setStatus(HttpStatus.CONFLICT);
+        message.setMessage("conflicted");
+        message.setMemo(ex.getMessage());
+        return new ResponseEntity<>(message, message.getStatus());
+    }
+
+    @ExceptionHandler(value = {NotAllowedAccessException.class})
+    public ResponseEntity<?> notAllowedAccessException(NotAllowedAccessException ex){
+        Message message = new Message();
+        log.warn("ERROR STACKTRACE => {}", ex.getStackTrace());
+
+        message.setStatus(HttpStatus.NOT_ACCEPTABLE);
+        message.setMessage("not_acceptable");
+        message.setMemo(ex.getMessage());
+        return new ResponseEntity<>(message, message.getStatus());
+    }
+
+    @ExceptionHandler(value = {NotMatchedFormatException.class})
+    public ResponseEntity<?> notMatchedFormatException(NotMatchedFormatException ex){
+        Message message = new Message();
+        log.warn("ERROR STACKTRACE => {}", ex.getStackTrace());
+
+        message.setStatus(HttpStatus.BAD_REQUEST);
+        message.setMessage("not_matched_format");
         message.setMemo(ex.getMessage());
         return new ResponseEntity<>(message, message.getStatus());
     }

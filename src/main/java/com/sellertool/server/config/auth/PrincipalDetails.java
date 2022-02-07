@@ -3,7 +3,7 @@ package com.sellertool.server.config.auth;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import com.sellertool.server.domain.user.model.entity.UserEntity;
+import com.sellertool.server.domain.user.entity.UserEntity;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,7 +24,10 @@ public class PrincipalDetails implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Collection<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(() -> user.getRoles());
+//        authorities.add(() -> user.getRoles());
+        user.getRoleList().forEach(r->{
+            authorities.add(()->r);
+        });
         return authorities;
     }
 
@@ -65,5 +68,8 @@ public class PrincipalDetails implements UserDetails {
         return true;
     }
 
+    public String getSalt(){
+        return this.user.getSalt();
+    }
     
 }

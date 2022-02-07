@@ -10,7 +10,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.Cookie;
 import javax.xml.bind.DatatypeConverter;
 
-import com.sellertool.server.domain.user.model.entity.UserEntity;
+import com.sellertool.server.domain.user.entity.UserEntity;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -21,32 +21,32 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class TokenUtils {
+public class AuthTokenUtils {
     private static String accessTokenSecret;
     private static String refreshTokenSecret;
 
-    public TokenUtils(String accessTokenSecret, String refreshTokenSecret) {
+    public AuthTokenUtils(String accessTokenSecret, String refreshTokenSecret) {
         this.accessTokenSecret = accessTokenSecret;
         this.refreshTokenSecret = refreshTokenSecret;
     }
 
-    public static String getJwtAccessToken(UserEntity userEntity, UUID refreshTokenId, String ipAddress) {
+    public static String getJwtAccessToken(UUID id, String roles, UUID refreshTokenId, String ipAddress) {
         JwtBuilder builder = Jwts.builder()
-            .setSubject(userEntity.getEmail() + "JWT_ACT")
+            .setSubject("JWT_ACT")
             .setHeader(createHeader())
-            .setClaims(createClaims(userEntity, refreshTokenId, ipAddress))
-            .setExpiration(createTokenExpiration(ExpireTimeInterface.JWT_TOKEN_EXPIRATION))
+            .setClaims(createClaims(id, roles, refreshTokenId, ipAddress))
+            .setExpiration(createTokenExpiration(CustomJwtInterface.JWT_TOKEN_EXPIRATION))
             .signWith(SignatureAlgorithm.HS256, createSigningKey(accessTokenSecret));
 
         return builder.compact();
     }
 
-    public static String getJwtRefreshToken(String ipAddress) {
+    public static String getJwtRefreshToken(UUID id, String roles, String ipAddress) {
         JwtBuilder builder = Jwts.builder()
             .setSubject("JWT_RFT")
             .setHeader(createHeader())
-            .setClaims(createRefreshTokenClaims(ipAddress))
-            .setExpiration(createTokenExpiration(ExpireTimeInterface.REFRESH_TOKEN_JWT_EXPIRATION))
+            .setClaims(createRefreshTokenClaims(id, roles, ipAddress))
+            .setExpiration(createTokenExpiration(CustomJwtInterface.REFRESH_TOKEN_JWT_EXPIRATION))
             .signWith(SignatureAlgorithm.HS256, createSigningKey(refreshTokenSecret));
         
         return builder.compact();
@@ -62,18 +62,19 @@ public class TokenUtils {
     }
 
     // JWT Palyod
-    private static Map<String, Object> createClaims(UserEntity userEntity, UUID refreshTokenId, String ipAddress) {
+    private static Map<String, Object> createClaims(UUID id, String roles, UUID refreshTokenId, String ipAddress) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("id", userEntity.getId());
-        claims.put("email", userEntity.getEmail());
-        claims.put("roles", userEntity.getRoles());
+        claims.put("id", id);
+        claims.put("roles", roles);
         claims.put("ip", ipAddress);
         claims.put("refreshTokenId", refreshTokenId);
         return claims;
     }
 
-    private static Map<String, Object> createRefreshTokenClaims(String ipAddress) {
+    private static Map<String, Object> createRefreshTokenClaims(UUID id, String roles, String ipAddress) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("id", id);
+        claims.put("roles", roles);
         claims.put("ip", ipAddress);
         return claims;
     }

@@ -9,6 +9,7 @@ import com.sellertool.server.domain.message.model.dto.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +38,7 @@ public class CsrfTokenApiV1 {
     public ResponseEntity<?> testCsrfToken(HttpServletRequest request, HttpServletResponse response){
         Message message = new Message();
 
+        System.out.println(SecurityContextHolder.getContext().getAuthentication());
         message.setStatus(HttpStatus.OK);
         message.setMessage("success");
         message.setData("csrf test success");

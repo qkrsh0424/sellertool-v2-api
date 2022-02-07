@@ -2,8 +2,8 @@ package com.sellertool.server.config.auth;
 
 import java.util.Optional;
 
-import com.sellertool.server.domain.user.model.entity.UserEntity;
-import com.sellertool.server.domain.user.model.repository.UserRepository;
+import com.sellertool.server.domain.user.entity.UserEntity;
+import com.sellertool.server.domain.user.repository.UserRepository;
 
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -18,13 +18,13 @@ public class PrincipalDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public PrincipalDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Optional<UserEntity> userOpt = userRepository.findByEmail(email);
+    public PrincipalDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Optional<UserEntity> userOpt = userRepository.findByUsername(username);
         
         if(userOpt.isPresent()) {
             return new PrincipalDetails(userOpt.get());
         } else {
-            throw new UsernameNotFoundException("email : " + email + ", not found.");
+            throw new UsernameNotFoundException("아이디 또는 패스워드를 확인해 주세요.");
         }
     }
 }
