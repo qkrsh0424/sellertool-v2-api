@@ -1,10 +1,12 @@
 package com.sellertool.server.domain.user.service;
 
+import com.sellertool.server.domain.user.vo.UserVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class UserBusinessService {
@@ -15,6 +17,17 @@ public class UserBusinessService {
     ){
         this.userService = userService;
     }
+
+    public Object getInfoOwn(){
+        if(!userService.isLogin()){
+            return null;
+        }
+
+        UUID USER_ID = userService.getUserId();
+        UserVo userVo = UserVo.toVo(userService.searchUserByUserId(USER_ID));
+        return userVo;
+    }
+
     public Object checkUsernameDuplicate(Map<String, Object> params){
         Object usernameObj = params.get("username");
         Map<String, Object> resultData = new HashMap<>();

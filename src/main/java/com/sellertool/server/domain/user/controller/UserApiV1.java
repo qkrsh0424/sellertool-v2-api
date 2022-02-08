@@ -25,6 +25,17 @@ public class UserApiV1 {
         this.userBusinessService = userBusinessService;
     }
 
+    @GetMapping("/info/own")
+    public ResponseEntity<?> getInfoOwn(){
+        Message message = new Message();
+
+        message.setStatus(HttpStatus.OK);
+        message.setMessage("success");
+        message.setData(userBusinessService.getInfoOwn());
+
+        return new ResponseEntity<>(message, message.getStatus());
+    }
+
     @GetMapping("/check/username-duplicate")
     public ResponseEntity<?> checkUsernameDuplicate(@RequestParam Map<String, Object> params) {
         Message message = new Message();
