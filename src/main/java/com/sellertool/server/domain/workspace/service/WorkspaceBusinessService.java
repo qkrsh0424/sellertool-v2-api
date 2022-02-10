@@ -1,5 +1,6 @@
 package com.sellertool.server.domain.workspace.service;
 
+import com.sellertool.server.domain.exception.dto.InvalidUserAuthException;
 import com.sellertool.server.domain.workspace.entity.WorkspaceEntity;
 import com.sellertool.server.domain.workspace.vo.WorkspaceVo;
 import com.sellertool.server.domain.workspace_member.entity.WorkspaceMemberEntity;
@@ -32,7 +33,7 @@ public class WorkspaceBusinessService {
 
     public Object searchWorkspace(Map<String, Object> params) {
         if(!userService.isLogin()){
-            return null;
+            throw new InvalidUserAuthException("토큰이 만료 되었습니다.");
         }
 
         UUID USER_ID = userService.getUserId();

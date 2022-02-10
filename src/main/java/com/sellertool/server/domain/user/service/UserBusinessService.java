@@ -17,34 +17,4 @@ public class UserBusinessService {
     ){
         this.userService = userService;
     }
-
-    public Object getInfoOwn(){
-        if(!userService.isLogin()){
-            return null;
-        }
-
-        UUID USER_ID = userService.getUserId();
-        UserVo userVo = UserVo.toVo(userService.searchUserByUserId(USER_ID));
-        return userVo;
-    }
-
-    public Object checkUsernameDuplicate(Map<String, Object> params){
-        Object usernameObj = params.get("username");
-        Map<String, Object> resultData = new HashMap<>();
-
-        if (usernameObj == null) {
-            resultData.put("isEmpty", true);
-            resultData.put("isDuplicated", false);
-        }
-        String USERNAME = usernameObj.toString();
-
-        if(!userService.isDuplicatedUsername(USERNAME)){
-            resultData.put("isEmpty", false);
-            resultData.put("isDuplicated", false);
-        }else{
-            resultData.put("isEmpty", false);
-            resultData.put("isDuplicated", true);
-        }
-        return resultData;
-    }
 }

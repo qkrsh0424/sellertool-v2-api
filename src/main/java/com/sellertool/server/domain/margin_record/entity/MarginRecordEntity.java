@@ -6,6 +6,7 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -25,6 +26,9 @@ public class MarginRecordEntity {
     @Column(name = "id")
     @Type(type = "uuid-char")
     private UUID id;
+    @Column(name = "open_key")
+    @Type(type = "uuid-char")
+    private UUID openKey;
     @Column(name = "name")
     private String name;
     @Column(name = "sale_price", columnDefinition = "0")
@@ -57,6 +61,10 @@ public class MarginRecordEntity {
     private float expenseTax;
     @Column(name = "total_tax", columnDefinition = "0")
     private float totalTax;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
     @Column(name = "workspace_id")
     @Type(type = "uuid-char")
     private UUID workspaceId;
@@ -68,6 +76,7 @@ public class MarginRecordEntity {
         MarginRecordEntity entity = MarginRecordEntity.builder()
                 .cid(dto.getCid())
                 .id(dto.getId())
+                .openKey(dto.getOpenKey())
                 .name(dto.getName())
                 .salePrice(dto.getSalePrice())
                 .purchaseCost(dto.getPurchaseCost())
@@ -84,6 +93,8 @@ public class MarginRecordEntity {
                 .incomeTax(dto.getIncomeTax())
                 .expenseTax(dto.getExpenseTax())
                 .totalTax(dto.getTotalTax())
+                .createdAt(dto.getCreatedAt())
+                .updatedAt(dto.getUpdatedAt())
                 .workspaceId(dto.getWorkspaceId())
                 .createdBy(dto.getCreatedBy())
                 .build();

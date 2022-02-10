@@ -1,8 +1,7 @@
 package com.sellertool.server.domain.exception.controller;
 
 import com.sellertool.server.domain.exception.dto.*;
-import com.sellertool.server.domain.message.model.dto.Message;
-
+import com.sellertool.server.domain.message.dto.Message;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

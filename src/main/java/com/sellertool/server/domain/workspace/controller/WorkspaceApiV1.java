@@ -1,6 +1,6 @@
 package com.sellertool.server.domain.workspace.controller;
 
-import com.sellertool.server.domain.message.model.dto.Message;
+import com.sellertool.server.domain.message.dto.Message;
 import com.sellertool.server.domain.workspace.service.WorkspaceBusinessService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

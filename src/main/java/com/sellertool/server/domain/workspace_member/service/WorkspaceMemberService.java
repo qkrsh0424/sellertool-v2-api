@@ -45,4 +45,55 @@ public class WorkspaceMemberService {
 
         return true;
     }
+
+    public boolean isAccessedReadPermissionOfWorkspace(UUID workspaceId, UUID userId){
+        List<WorkspaceMemberEntity> workspaceMemberEntities = workspaceMemberRepository.findByWorkspaceId(workspaceId);
+
+        List<WorkspaceMemberEntity> matchedMemberEntities = workspaceMemberEntities.stream().filter(r->r.getUserId().equals(userId)).collect(Collectors.toList());
+        Optional<WorkspaceMemberEntity> workspaceMemberEntityOpt = matchedMemberEntities.stream().findFirst();
+
+        if(!workspaceMemberEntityOpt.isPresent()){
+            return false;
+        }
+
+        if(!workspaceMemberEntityOpt.get().getReadPermissionYn().equals("y")){
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean isAccessedUpdatePermissionOfWorkspace(UUID workspaceId, UUID userId) {
+        List<WorkspaceMemberEntity> workspaceMemberEntities = workspaceMemberRepository.findByWorkspaceId(workspaceId);
+
+        List<WorkspaceMemberEntity> matchedMemberEntities = workspaceMemberEntities.stream().filter(r->r.getUserId().equals(userId)).collect(Collectors.toList());
+        Optional<WorkspaceMemberEntity> workspaceMemberEntityOpt = matchedMemberEntities.stream().findFirst();
+
+        if(!workspaceMemberEntityOpt.isPresent()){
+            return false;
+        }
+
+        if(!workspaceMemberEntityOpt.get().getUpdatePermissionYn().equals("y")){
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean isAccessedDeletePermissionOfWorkspace(UUID workspaceId, UUID userId) {
+        List<WorkspaceMemberEntity> workspaceMemberEntities = workspaceMemberRepository.findByWorkspaceId(workspaceId);
+
+        List<WorkspaceMemberEntity> matchedMemberEntities = workspaceMemberEntities.stream().filter(r->r.getUserId().equals(userId)).collect(Collectors.toList());
+        Optional<WorkspaceMemberEntity> workspaceMemberEntityOpt = matchedMemberEntities.stream().findFirst();
+
+        if(!workspaceMemberEntityOpt.isPresent()){
+            return false;
+        }
+
+        if(!workspaceMemberEntityOpt.get().getDeletePermissionYn().equals("y")){
+            return false;
+        }
+
+        return true;
+    }
 }

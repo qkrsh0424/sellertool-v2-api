@@ -4,6 +4,7 @@ import lombok.*;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.Column;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -15,6 +16,7 @@ import java.util.UUID;
 public class MarginRecordDto {
     private Integer cid;
     private UUID id;
+    private UUID openKey;
     private String name;
     private float salePrice;
     private float purchaseCost;
@@ -31,6 +33,8 @@ public class MarginRecordDto {
     private float incomeTax;
     private float expenseTax;
     private float totalTax;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private UUID workspaceId;
     private UUID createdBy;
 }
