@@ -7,6 +7,7 @@ import com.sellertool.server.domain.user.entity.QUserEntity;
 import com.sellertool.server.domain.workspace.entity.QWorkspaceEntity;
 import com.sellertool.server.domain.workspace.entity.WorkspaceEntity;
 import com.sellertool.server.domain.workspace.utils.WorkspaceStaticVariable;
+import com.sellertool.server.domain.workspace_member.entity.QWorkspaceMemberEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -19,6 +20,7 @@ public class WorkspaceRepositoryImpl implements WorkspaceRepositoryCustom {
 
     private final QUserEntity qUserEntity = QUserEntity.userEntity;
     private final QWorkspaceEntity qWorkspaceEntity = QWorkspaceEntity.workspaceEntity;
+    private final QWorkspaceMemberEntity qWorkspaceMemberEntity = QWorkspaceMemberEntity.workspaceMemberEntity;
 
     @Autowired
     public WorkspaceRepositoryImpl(
@@ -44,6 +46,17 @@ public class WorkspaceRepositoryImpl implements WorkspaceRepositoryCustom {
         JPQLQuery customQuery = query.from(qWorkspaceEntity)
                 .select(qWorkspaceEntity)
                 .where(qWorkspaceEntity.id.eq(workspaceId));
+
+        QueryResults<WorkspaceEntity> result = customQuery.fetchResults();
+        return result.getResults();
+    }
+
+    @Override
+    public List<WorkspaceEntity> qSelectListByUserId(UUID userId) {
+        JPQLQuery customQuery = query.from(qWorkspaceMemberEntity)
+                .select(qWorkspaceEntity)
+                .join(qWorkspaceEntity).on(qWorkspaceEntity.id.eq(qWorkspaceMemberEntity.workspaceId))
+                .where(qWorkspaceMemberEntity.userId.eq(userId));
 
         QueryResults<WorkspaceEntity> result = customQuery.fetchResults();
         return result.getResults();

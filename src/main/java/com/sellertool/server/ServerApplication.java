@@ -3,6 +3,9 @@ package com.sellertool.server;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import javax.annotation.PostConstruct;
+import java.util.TimeZone;
+
 @SpringBootApplication
 public class ServerApplication {
 
@@ -10,4 +13,9 @@ public class ServerApplication {
         SpringApplication.run(ServerApplication.class, args);
     }
 
+    @PostConstruct
+    public void started() {
+        // timezone UTC 셋팅
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    }
 }

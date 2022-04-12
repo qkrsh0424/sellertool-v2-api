@@ -11,4 +11,6 @@ public interface WorkspaceRepositoryCustom {
     List<WorkspaceEntity> qSelectOwnWorkspace(UUID userId);
 
     List<WorkspaceEntity> qSelectList(UUID workspaceId);
+
+    List<WorkspaceEntity> qSelectListByUserId(UUID userId);
 }

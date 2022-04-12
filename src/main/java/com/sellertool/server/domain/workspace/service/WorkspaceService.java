@@ -31,4 +31,12 @@ public class WorkspaceService {
         List<WorkspaceEntity> workspaceEntities = workspaceRepository.qSelectList(workspaceId);
         return workspaceEntities.stream().findFirst().orElse(null);
     }
+
+    public List<WorkspaceEntity> searchListByUserId(UUID userId) {
+        return workspaceRepository.qSelectListByUserId(userId);
+    }
+
+    public List<WorkspaceEntity> searchListByIds(List<UUID> workspaceIds) {
+        return workspaceRepository.findAllByIds(workspaceIds);
+    }
 }

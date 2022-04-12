@@ -1,6 +1,7 @@
 package com.sellertool.server.domain.workspace_member.service;
 
 import com.sellertool.server.domain.workspace_member.entity.WorkspaceMemberEntity;
+import com.sellertool.server.domain.workspace_member.proj.WorkspaceMemberM2OJProj;
 import com.sellertool.server.domain.workspace_member.repository.WorkspaceMemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,34 +30,38 @@ public class WorkspaceMemberService {
         return workspaceMemberRepository.findByWorkspaceId(workspaceId);
     }
 
-    public boolean isAccessedWritePermissionOfWorkspace(UUID workspaceId, UUID userId){
+    public List<WorkspaceMemberM2OJProj> searchM2OJProjByWorkspaceId(UUID workspaceId) {
+        return workspaceMemberRepository.qSelectM2OJByWorkspaceId(workspaceId);
+    }
+
+    public boolean isAccessedWritePermissionOfWorkspace(UUID workspaceId, UUID userId) {
         List<WorkspaceMemberEntity> workspaceMemberEntities = workspaceMemberRepository.findByWorkspaceId(workspaceId);
 
-        List<WorkspaceMemberEntity> matchedMemberEntities = workspaceMemberEntities.stream().filter(r->r.getUserId().equals(userId)).collect(Collectors.toList());
+        List<WorkspaceMemberEntity> matchedMemberEntities = workspaceMemberEntities.stream().filter(r -> r.getUserId().equals(userId)).collect(Collectors.toList());
         Optional<WorkspaceMemberEntity> workspaceMemberEntityOpt = matchedMemberEntities.stream().findFirst();
 
-        if(!workspaceMemberEntityOpt.isPresent()){
+        if (!workspaceMemberEntityOpt.isPresent()) {
             return false;
         }
 
-        if(!workspaceMemberEntityOpt.get().getWritePermissionYn().equals("y")){
+        if (!workspaceMemberEntityOpt.get().getWritePermissionYn().equals("y")) {
             return false;
         }
 
         return true;
     }
 
-    public boolean isAccessedReadPermissionOfWorkspace(UUID workspaceId, UUID userId){
+    public boolean isAccessedReadPermissionOfWorkspace(UUID workspaceId, UUID userId) {
         List<WorkspaceMemberEntity> workspaceMemberEntities = workspaceMemberRepository.findByWorkspaceId(workspaceId);
 
-        List<WorkspaceMemberEntity> matchedMemberEntities = workspaceMemberEntities.stream().filter(r->r.getUserId().equals(userId)).collect(Collectors.toList());
+        List<WorkspaceMemberEntity> matchedMemberEntities = workspaceMemberEntities.stream().filter(r -> r.getUserId().equals(userId)).collect(Collectors.toList());
         Optional<WorkspaceMemberEntity> workspaceMemberEntityOpt = matchedMemberEntities.stream().findFirst();
 
-        if(!workspaceMemberEntityOpt.isPresent()){
+        if (!workspaceMemberEntityOpt.isPresent()) {
             return false;
         }
 
-        if(!workspaceMemberEntityOpt.get().getReadPermissionYn().equals("y")){
+        if (!workspaceMemberEntityOpt.get().getReadPermissionYn().equals("y")) {
             return false;
         }
 
@@ -66,14 +71,14 @@ public class WorkspaceMemberService {
     public boolean isAccessedUpdatePermissionOfWorkspace(UUID workspaceId, UUID userId) {
         List<WorkspaceMemberEntity> workspaceMemberEntities = workspaceMemberRepository.findByWorkspaceId(workspaceId);
 
-        List<WorkspaceMemberEntity> matchedMemberEntities = workspaceMemberEntities.stream().filter(r->r.getUserId().equals(userId)).collect(Collectors.toList());
+        List<WorkspaceMemberEntity> matchedMemberEntities = workspaceMemberEntities.stream().filter(r -> r.getUserId().equals(userId)).collect(Collectors.toList());
         Optional<WorkspaceMemberEntity> workspaceMemberEntityOpt = matchedMemberEntities.stream().findFirst();
 
-        if(!workspaceMemberEntityOpt.isPresent()){
+        if (!workspaceMemberEntityOpt.isPresent()) {
             return false;
         }
 
-        if(!workspaceMemberEntityOpt.get().getUpdatePermissionYn().equals("y")){
+        if (!workspaceMemberEntityOpt.get().getUpdatePermissionYn().equals("y")) {
             return false;
         }
 
@@ -83,17 +88,21 @@ public class WorkspaceMemberService {
     public boolean isAccessedDeletePermissionOfWorkspace(UUID workspaceId, UUID userId) {
         List<WorkspaceMemberEntity> workspaceMemberEntities = workspaceMemberRepository.findByWorkspaceId(workspaceId);
 
-        List<WorkspaceMemberEntity> matchedMemberEntities = workspaceMemberEntities.stream().filter(r->r.getUserId().equals(userId)).collect(Collectors.toList());
+        List<WorkspaceMemberEntity> matchedMemberEntities = workspaceMemberEntities.stream().filter(r -> r.getUserId().equals(userId)).collect(Collectors.toList());
         Optional<WorkspaceMemberEntity> workspaceMemberEntityOpt = matchedMemberEntities.stream().findFirst();
 
-        if(!workspaceMemberEntityOpt.isPresent()){
+        if (!workspaceMemberEntityOpt.isPresent()) {
             return false;
         }
 
-        if(!workspaceMemberEntityOpt.get().getDeletePermissionYn().equals("y")){
+        if (!workspaceMemberEntityOpt.get().getDeletePermissionYn().equals("y")) {
             return false;
         }
 
         return true;
+    }
+
+    public List<WorkspaceMemberEntity> searchListByUserId(UUID userId) {
+        return workspaceMemberRepository.findByUserId(userId);
     }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface WorkspaceMemberRepository extends JpaRepository<WorkspaceMemberEntity, Integer> {
+public interface WorkspaceMemberRepository extends JpaRepository<WorkspaceMemberEntity, Integer>, WorkspaceMemberRepositoryCustom {
     List<WorkspaceMemberEntity> findByWorkspaceId(UUID workspaceId);
+    List<WorkspaceMemberEntity> findByUserId(UUID userId);
 }
