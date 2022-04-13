@@ -23,12 +23,12 @@ public class WorkspaceEntity {
     @Column(name = "cid")
     private Integer cid;
     @Column(name = "id")
-    @Type(type="uuid-char")
+    @Type(type = "uuid-char")
     private UUID id;
     @Column(name = "name")
     private String name;
     @Column(name = "master_id")
-    @Type(type="uuid-char")
+    @Type(type = "uuid-char")
     private UUID masterId;
     @Column(name = "public_yn", columnDefinition = "n")
     private String publicYn;
@@ -38,4 +38,11 @@ public class WorkspaceEntity {
     private LocalDateTime createdAt;
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public static boolean isMaster(UUID userId, WorkspaceEntity entity) {
+        if (userId.equals(entity.getMasterId())) {
+            return true;
+        }
+        return false;
+    }
 }

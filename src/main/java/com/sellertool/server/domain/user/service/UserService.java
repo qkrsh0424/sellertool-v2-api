@@ -90,4 +90,8 @@ public class UserService {
 
         return userEntities.stream().findAny().isPresent();
     }
+
+    public UserEntity searchByUsername(String username) {
+        return userRepository.findByUsername(username).orElse(null);
+    }
 }
