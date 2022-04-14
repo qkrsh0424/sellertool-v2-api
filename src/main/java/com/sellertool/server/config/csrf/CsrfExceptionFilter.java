@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellertool.server.config.exception.CsrfAccessDeniedException;
 import com.sellertool.server.config.exception.CsrfExpiredJwtException;
 import com.sellertool.server.config.exception.CsrfNullPointerException;
-import com.sellertool.server.domain.message.model.dto.Message;
+import com.sellertool.server.domain.message.dto.Message;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -18,7 +18,7 @@ import java.io.IOException;
 public class CsrfExceptionFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        System.out.println("============CsrfExceptionFilter============");
+//        System.out.println("============CsrfExceptionFilter============");
         try{
             filterChain.doFilter(request, response);
         } catch (CsrfNullPointerException | CsrfAccessDeniedException | CsrfExpiredJwtException e){

@@ -8,17 +8,11 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellertool.server.config.exception.CsrfAccessDeniedException;
 import com.sellertool.server.config.exception.CsrfExpiredJwtException;
 import com.sellertool.server.config.exception.CsrfNullPointerException;
-import com.sellertool.server.domain.exception.dto.AccessDeniedPermissionException;
-import com.sellertool.server.domain.message.model.dto.Message;
-import com.sellertool.server.utils.CsrfTokenUtils;
 
 import io.jsonwebtoken.*;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.WebUtils;
 
@@ -39,7 +33,7 @@ public class CsrfAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-        System.out.println("============CsrfAuthenticationFilter============");
+//        System.out.println("============CsrfAuthenticationFilter============");
         // GET 메소드는 CsrfFilter를 타지 않는다
         if (request.getMethod().equals("GET")) {
             chain.doFilter(request, response);
@@ -47,7 +41,7 @@ public class CsrfAuthenticationFilter extends OncePerRequestFilter {
         } else {
             try {
 //            일종의 저장소
-                Cookie csrfJwt = WebUtils.getCookie(request, "csrf_jwt");
+                Cookie csrfJwt = WebUtils.getCookie(request, "api_csrf_jwt");
 
                 String csrfJwtToken = csrfJwt.getValue();
 //            실제 CSRF 토큰 값

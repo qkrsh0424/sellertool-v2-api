@@ -4,10 +4,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import com.sellertool.server.domain.message.model.dto.Message;
-
 class MessageTest {
     @Test
     public void messageGetTest(){

@@ -1,6 +1,6 @@
 package com.sellertool.server.domain.hello.controller;
 
-import com.sellertool.server.domain.message.model.dto.Message;
+import com.sellertool.server.domain.message.dto.Message;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

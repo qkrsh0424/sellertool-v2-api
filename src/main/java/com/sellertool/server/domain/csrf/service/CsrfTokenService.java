@@ -15,9 +15,9 @@ public class CsrfTokenService {
 
     @Value("${csrf.token.secret}")
     private String csrfTokenSecret;
-    
+
     private CsrfTokenUtils csrfTokenUtils;
-    
+
     public void getCsrfToken(HttpServletResponse response) {
         this.csrfTokenUtils = new CsrfTokenUtils(csrfTokenSecret);
 
@@ -25,24 +25,24 @@ public class CsrfTokenService {
         String csrfTokenId = UUID.randomUUID().toString();
         String csrfJwtToken = CsrfTokenUtils.getCsrfJwtToken(csrfTokenId);
 
-        ResponseCookie csrfJwt = ResponseCookie.from("csrf_jwt", csrfJwtToken)
-            .httpOnly(true)
-            .domain(CustomCookieInterface.COOKIE_DOMAIN)
-            .secure(true)
-            .sameSite("Strict")
-            .path("/")
-            .maxAge(CustomCookieInterface.CSRF_TOKEN_COOKIE_EXPIRATION)
-            .build();
+        ResponseCookie csrfJwt = ResponseCookie.from("api_csrf_jwt", csrfJwtToken)
+                .httpOnly(true)
+                .domain(CustomCookieInterface.COOKIE_DOMAIN)
+                .secure(CustomCookieInterface.SECURE)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(CustomCookieInterface.CSRF_TOKEN_COOKIE_EXPIRATION)
+                .build();
 
-        ResponseCookie csrfToken = ResponseCookie.from("csrf_token", csrfTokenId)
-                .secure(true)
+        ResponseCookie csrfToken = ResponseCookie.from("api_csrf", csrfTokenId)
+                .secure(CustomCookieInterface.SECURE)
                 .domain(CustomCookieInterface.COOKIE_DOMAIN)
                 .sameSite("Strict")
                 .path("/")
                 .maxAge(CustomCookieInterface.CSRF_TOKEN_COOKIE_EXPIRATION)
                 .build();
 
-        
+
         response.addHeader(HttpHeaders.SET_COOKIE, csrfJwt.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, csrfToken.toString());
 //        response.setHeader("X-XSRF-TOKEN", csrfTokenId);

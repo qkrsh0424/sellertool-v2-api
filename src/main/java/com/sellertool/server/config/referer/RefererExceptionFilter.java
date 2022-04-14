@@ -2,7 +2,7 @@ package com.sellertool.server.config.referer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellertool.server.config.exception.RefererAccessDeniedException;
-import com.sellertool.server.domain.message.model.dto.Message;
+import com.sellertool.server.domain.message.dto.Message;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -16,7 +16,7 @@ import java.io.IOException;
 public class RefererExceptionFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        System.out.println("============RefererExceptionFilter============");
+//        System.out.println("============RefererExceptionFilter============");
         try {
             filterChain.doFilter(request, response);
         } catch (RefererAccessDeniedException e){

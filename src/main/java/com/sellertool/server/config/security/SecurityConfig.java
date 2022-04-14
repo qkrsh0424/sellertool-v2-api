@@ -1,18 +1,12 @@
 package com.sellertool.server.config.security;
 
-import com.sellertool.server.config.auth.JwtAuthenticationFilter;
-import com.sellertool.server.config.auth.JwtAuthenticationProvider;
-import com.sellertool.server.config.auth.JwtAuthorizationFilter;
-import com.sellertool.server.config.auth.JwtLogoutSuccessHandler;
-import com.sellertool.server.config.auth.PrincipalDetailsService;
-import com.sellertool.server.config.csrf.CsrfAuthenticationFilter;
 import com.sellertool.server.config.auth.JwtAuthorizationExceptionFilter;
+import com.sellertool.server.config.auth.JwtAuthorizationFilter;
+import com.sellertool.server.config.csrf.CsrfAuthenticationFilter;
 import com.sellertool.server.config.csrf.CsrfExceptionFilter;
-import com.sellertool.server.config.referer.RefererExceptionFilter;
 import com.sellertool.server.config.referer.RefererAuthenticationFilter;
-import com.sellertool.server.domain.refresh_token.model.repository.RefreshTokenRepository;
-import com.sellertool.server.domain.user.repository.UserRepository;
-
+import com.sellertool.server.config.referer.RefererExceptionFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,22 +21,13 @@ import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.firewall.DefaultHttpFirewall;
 import org.springframework.security.web.firewall.HttpFirewall;
 
-import lombok.RequiredArgsConstructor;
-
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
-    private final PrincipalDetailsService principalDetailsService;
-
     @Value("${jwt.access.secret}")
     private String accessTokenSecret;
-
-    @Value("${jwt.refresh.secret}")
-    private String refreshTokenSecret;
 
     @Value("${csrf.token.secret}")
     private String csrfTokenSecret;
@@ -73,14 +58,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .permitAll()
                 .anyRequest().permitAll();
         http
-                .logout()
-                .logoutUrl("/api/v1/user/logout")
-                .logoutSuccessHandler(new JwtLogoutSuccessHandler(accessTokenSecret, refreshTokenRepository));
-        http
                 .addFilterBefore(new RefererAuthenticationFilter(), CsrfFilter.class)
                 .addFilterAfter(new CsrfAuthenticationFilter(csrfTokenSecret), RefererAuthenticationFilter.class)
-                .addFilterAfter(new JwtAuthorizationFilter(userRepository, refreshTokenRepository, accessTokenSecret, refreshTokenSecret), CsrfAuthenticationFilter.class)
-                .addFilterAfter(new JwtAuthenticationFilter(authenticationManager(), userRepository, refreshTokenRepository, accessTokenSecret, refreshTokenSecret), JwtAuthorizationFilter.class)
+                .addFilterAfter(new JwtAuthorizationFilter(accessTokenSecret), CsrfAuthenticationFilter.class)
                 .addFilterBefore(new RefererExceptionFilter(), RefererAuthenticationFilter.class)
                 .addFilterBefore(new CsrfExceptionFilter(), CsrfAuthenticationFilter.class)
                 .addFilterBefore(new JwtAuthorizationExceptionFilter(), JwtAuthorizationFilter.class);
@@ -100,10 +80,5 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public HttpFirewall defaultHttpFirewall() {
         return new DefaultHttpFirewall();
-    }
-
-    @Bean
-    public JwtAuthenticationProvider jwtAuthenticationProvider() {
-        return new JwtAuthenticationProvider(principalDetailsService, passwordEncoder());
     }
 }
