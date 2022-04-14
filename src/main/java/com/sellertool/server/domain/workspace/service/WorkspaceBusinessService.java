@@ -1,6 +1,8 @@
 package com.sellertool.server.domain.workspace.service;
 
 import com.sellertool.server.domain.exception.dto.InvalidUserAuthException;
+import com.sellertool.server.domain.exception.dto.NotAllowedAccessException;
+import com.sellertool.server.domain.exception.dto.NotMatchedFormatException;
 import com.sellertool.server.domain.user.entity.UserEntity;
 import com.sellertool.server.domain.workspace.dto.WorkspaceDto;
 import com.sellertool.server.domain.workspace.entity.WorkspaceEntity;
@@ -121,5 +123,34 @@ public class WorkspaceBusinessService {
         workspaceMemberService.saveAndModify(workspaceMemberEntity);
 
         return WORKSPACE_ID;
+    }
+
+    /*
+    로그인 체크
+    워크스페이스 존재여부 검사
+    워크스페이스 마스터 권한 검사
+     */
+    @Transactional
+    public void changeNameByWorkspaceId(UUID workspaceId, Map<String, Object> body) {
+        if (!userService.isLogin()) {
+            throw new InvalidUserAuthException("토큰이 만료 되었습니다.");
+        }
+
+        UUID USER_ID = userService.getUserId();
+        WorkspaceEntity workspaceEntity = workspaceService.searchWorkspaceOne(workspaceId);
+
+//        워크스페이스 존재 여부 검사
+        if (workspaceEntity == null) {
+            throw new NotMatchedFormatException("워크스페이스를 찾을 수 없음.");
+        }
+
+//        워크스페이스 마스터 권한 검사
+        if (!workspaceEntity.getMasterId().equals(USER_ID)) {
+            throw new NotAllowedAccessException("권한이 없습니다.");
+        }
+
+        String newName = body.get("name").toString();
+
+        workspaceEntity.setName(newName);
     }
 }
