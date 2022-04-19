@@ -1,5 +1,6 @@
 package com.sellertool.server.domain.invite_member.controller;
 
+import com.sellertool.server.annotation.RequiredLogin;
 import com.sellertool.server.domain.exception.dto.NotMatchedFormatException;
 import com.sellertool.server.domain.invite_member.dto.InviteMemberDto;
 import com.sellertool.server.domain.invite_member.service.InviteMemberBusinessService;
@@ -17,9 +18,18 @@ import java.util.UUID;
 public class InviteMemberApiV1 {
     private final InviteMemberBusinessService inviteMemberBusinessService;
 
+    @RequiredLogin
     @GetMapping("/workspaces/{workspaceId}")
-    public ResponseEntity<?> searchByWorkspaceId(@PathVariable(value = "workspaceId") UUID workspaceId) {
+    public ResponseEntity<?> searchByWorkspaceId(@PathVariable(value = "workspaceId") Object workspaceIdObj) {
         Message message = new Message();
+
+        UUID workspaceId = null;
+
+        try{
+            workspaceId = UUID.fromString(workspaceIdObj.toString());
+        }catch (IllegalArgumentException | NullPointerException e){
+            throw new NotMatchedFormatException("워크스페이스 정보를 찾을 수 없습니다.");
+        }
 
         message.setStatus(HttpStatus.OK);
         message.setMessage("success");
@@ -27,17 +37,20 @@ public class InviteMemberApiV1 {
         return new ResponseEntity<>(message, message.getStatus());
     }
 
+    @RequiredLogin
     @PostMapping("/one")
     public ResponseEntity<?> createOne(@RequestBody InviteMemberDto inviteMemberDto) {
         Message message = new Message();
 
-        inviteMemberBusinessService.createOne(inviteMemberDto);
+        UUID workspaceId = inviteMemberDto.getWorkspaceId();
+        inviteMemberBusinessService.createOne(workspaceId, inviteMemberDto);
         message.setStatus(HttpStatus.OK);
         message.setMessage("success");
 
         return new ResponseEntity<>(message, message.getStatus());
     }
 
+    @RequiredLogin
     @DeleteMapping("/workspaces/{workspaceId}/invite-members/{inviteMemberId}")
     public ResponseEntity<?> deleteByWorkspaceIdAndInviteMemberId(
             @PathVariable(value = "workspaceId") Object workspaceIdObj,

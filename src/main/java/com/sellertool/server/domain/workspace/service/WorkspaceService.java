@@ -1,11 +1,15 @@
 package com.sellertool.server.domain.workspace.service;
 
+import com.sellertool.server.domain.exception.dto.AccessDeniedPermissionException;
+import com.sellertool.server.domain.exception.dto.NotMatchedFormatException;
+import com.sellertool.server.domain.user.entity.UserEntity;
 import com.sellertool.server.domain.workspace.entity.WorkspaceEntity;
 import com.sellertool.server.domain.workspace.repository.WorkspaceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -28,8 +32,8 @@ public class WorkspaceService {
     }
 
     public WorkspaceEntity searchWorkspaceOne(UUID workspaceId){
-        List<WorkspaceEntity> workspaceEntities = workspaceRepository.qSelectList(workspaceId);
-        return workspaceEntities.stream().findFirst().orElse(null);
+        WorkspaceEntity workspaceEntity = workspaceRepository.findById(workspaceId).orElse(null);
+        return workspaceEntity;
     }
 
     public List<WorkspaceEntity> searchListByUserId(UUID userId) {

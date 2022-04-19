@@ -1,5 +1,6 @@
 package com.sellertool.server.domain.workspace_member.service;
 
+import com.sellertool.server.domain.exception.dto.NotAllowedAccessException;
 import com.sellertool.server.domain.workspace_member.entity.WorkspaceMemberEntity;
 import com.sellertool.server.domain.workspace_member.proj.WorkspaceMemberM2OJProj;
 import com.sellertool.server.domain.workspace_member.repository.WorkspaceMemberRepository;
