@@ -42,6 +42,12 @@ public class UserEntity {
     @Column(name = "nickname")
     private String nickname;
 
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
     @Column(name = "salt")
     private String salt;
 

@@ -23,6 +23,8 @@ public class UserVo {
     private String email;
     private String nickname;
     private String roles;
+    private String name;
+    private String phoneNumber;
 
     public static UserVo toVo(UserEntity entity) {
         UserVo vo = UserVo.builder()
@@ -30,6 +32,8 @@ public class UserVo {
                 .username(entity.getUsername())
                 .email(entity.getEmail())
                 .nickname(entity.getNickname())
+                .name(entity.getName())
+                .phoneNumber(entity.getPhoneNumber())
                 .roles(entity.getRoles())
                 .build();
         return vo;

@@ -1,5 +1,6 @@
 package com.sellertool.server.domain.workspace.service;
 
+import com.sellertool.server.annotation.WorkspacePermission;
 import com.sellertool.server.domain.exception.dto.InvalidUserAuthException;
 import com.sellertool.server.domain.exception.dto.NotAllowedAccessException;
 import com.sellertool.server.domain.exception.dto.NotMatchedFormatException;
@@ -43,10 +44,6 @@ public class WorkspaceBusinessService {
     }
 
     public Object searchWorkspace(Object workspaceIdObj) {
-        if (!userService.isLogin()) {
-            throw new InvalidUserAuthException("토큰이 만료 되었습니다.");
-        }
-
         UUID USER_ID = userService.getUserId();
         UUID workspaceId = null;
 
@@ -73,10 +70,6 @@ public class WorkspaceBusinessService {
     }
 
     public Object searchListByUser() {
-        if (!userService.isLogin()) {
-            throw new InvalidUserAuthException("토큰이 만료 되었습니다.");
-        }
-
         UUID USER_ID = userService.getUserId();
 
         List<WorkspaceEntity> workspaceEntities = workspaceService.searchListByUserId(USER_ID);
@@ -89,10 +82,6 @@ public class WorkspaceBusinessService {
 
     @Transactional
     public Object createPrivate(WorkspaceDto workspaceDto) {
-        if (!userService.isLogin()) {
-            throw new InvalidUserAuthException("토큰이 만료 되었습니다.");
-        }
-
         UUID USER_ID = userService.getUserId();
         UUID WORKSPACE_ID = UUID.randomUUID();
         UUID WORKSPACE_MEMBER_ID = UUID.randomUUID();
@@ -132,22 +121,11 @@ public class WorkspaceBusinessService {
      */
     @Transactional
     public void changeNameByWorkspaceId(UUID workspaceId, Map<String, Object> body) {
-        if (!userService.isLogin()) {
-            throw new InvalidUserAuthException("토큰이 만료 되었습니다.");
-        }
-
-        UUID USER_ID = userService.getUserId();
         WorkspaceEntity workspaceEntity = workspaceService.searchWorkspaceOne(workspaceId);
+        UUID USER_ID = userService.getUserId();
 
-//        워크스페이스 존재 여부 검사
-        if (workspaceEntity == null) {
-            throw new NotMatchedFormatException("워크스페이스를 찾을 수 없음.");
-        }
-
-//        워크스페이스 마스터 권한 검사
-        if (!workspaceEntity.getMasterId().equals(USER_ID)) {
-            throw new NotAllowedAccessException("권한이 없습니다.");
-        }
+        WorkspaceEntity.existence(workspaceEntity);
+        WorkspaceEntity.masterOnly(workspaceEntity, USER_ID);
 
         String newName = body.get("name").toString();
 

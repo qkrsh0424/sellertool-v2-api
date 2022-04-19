@@ -1,5 +1,6 @@
 package com.sellertool.server.domain.workspace.controller;
 
+import com.sellertool.server.annotation.RequiredLogin;
 import com.sellertool.server.domain.exception.dto.NotMatchedFormatException;
 import com.sellertool.server.domain.message.dto.Message;
 import com.sellertool.server.domain.workspace.dto.WorkspaceDto;
@@ -19,6 +20,7 @@ import java.util.UUID;
 public class WorkspaceApiV1 {
     private final WorkspaceBusinessService workspaceBusinessService;
 
+    @RequiredLogin
     @GetMapping("/{id}")
     public ResponseEntity<?> searchWorkspace(@PathVariable(value = "id") Object workspaceIdObj) {
         Message message = new Message();
@@ -30,6 +32,7 @@ public class WorkspaceApiV1 {
         return new ResponseEntity<>(message, message.getStatus());
     }
 
+    @RequiredLogin
     @GetMapping("")
     public ResponseEntity<?> searchWorkspaces() {
         Message message = new Message();
@@ -41,6 +44,7 @@ public class WorkspaceApiV1 {
         return new ResponseEntity<>(message, message.getStatus());
     }
 
+    @RequiredLogin
     @PostMapping("/private")
     public ResponseEntity<?> createPrivate(@RequestBody WorkspaceDto dto) {
         Message message = new Message();
@@ -52,6 +56,7 @@ public class WorkspaceApiV1 {
         return new ResponseEntity<>(message, message.getStatus());
     }
 
+    @RequiredLogin
     @PatchMapping("/{workspaceId}/name")
     public ResponseEntity<?> changeNameByWorkspaceId(@PathVariable(value = "workspaceId") Object workspaceIdObj, @RequestBody Map<String, Object> body) {
         Message message = new Message();
