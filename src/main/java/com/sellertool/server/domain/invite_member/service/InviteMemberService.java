@@ -29,7 +29,20 @@ public class InviteMemberService {
         return proj;
     }
 
+    public List<InviteMemberM2OJProj> qSelectM2OJByUserId(UUID userId){
+        List<InviteMemberM2OJProj> proj = inviteMemberRepository.qSelectM2OJByUserId(userId);
+        return proj;
+    }
+
     public void deleteByWorkspaceIdAndInviteMemberId(UUID workspaceId, UUID inviteMemberId) {
         inviteMemberRepository.deleteByWorkspaceIdAndInviteMemberId(workspaceId, inviteMemberId);
+    }
+
+    public InviteMemberM2OJProj qSelectM2OJById(UUID inviteMemberId) {
+        return inviteMemberRepository.qSelectM2OJById(inviteMemberId).stream().findFirst().orElse(null);
+    }
+
+    public void deleteByEntity(InviteMemberEntity inviteMemberEntity) {
+        inviteMemberRepository.delete(inviteMemberEntity);
     }
 }

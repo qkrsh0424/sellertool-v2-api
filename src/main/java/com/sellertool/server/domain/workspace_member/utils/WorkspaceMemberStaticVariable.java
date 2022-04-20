@@ -13,5 +13,6 @@ public interface WorkspaceMemberStaticVariable {
     public final String DELETE_PERMISSION_Y = "y";
     public final String DELETE_PERMISSION_N = "n";
 
-    public final String GRADE_MASTER = "마스터";
+    public final String GRADE_HOST = "HOST";
+    public final String GRADE_MEMBER = "MEMBER";
 }

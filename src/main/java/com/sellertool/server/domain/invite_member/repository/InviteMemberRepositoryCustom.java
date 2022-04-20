@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface InviteMemberRepositoryCustom {
     List<InviteMemberM2OJProj> qSelectM2OJByWorkspaceId(UUID workspaceId);
+    List<InviteMemberM2OJProj> qSelectM2OJByUserId(UUID userId);
+    List<InviteMemberM2OJProj> qSelectM2OJById(UUID inviteMemberId);
 }
