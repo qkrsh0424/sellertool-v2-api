@@ -38,6 +38,17 @@ public class InviteMemberApiV1 {
     }
 
     @RequiredLogin
+    @GetMapping("/requested")
+    public ResponseEntity<?> searchByRequested() {
+        Message message = new Message();
+
+        message.setStatus(HttpStatus.OK);
+        message.setMessage("success");
+        message.setData(inviteMemberBusinessService.searchM2OJByRequested());
+        return new ResponseEntity<>(message, message.getStatus());
+    }
+
+    @RequiredLogin
     @PostMapping("/one")
     public ResponseEntity<?> createOne(@RequestBody InviteMemberDto inviteMemberDto) {
         Message message = new Message();
@@ -68,6 +79,44 @@ public class InviteMemberApiV1 {
         }
 
         inviteMemberBusinessService.deleteByWorkspaceIdAndInviteMemberId(workspaceId, inviteMemberId);
+        message.setStatus(HttpStatus.OK);
+        message.setMessage("success");
+
+        return new ResponseEntity<>(message, message.getStatus());
+    }
+
+    @RequiredLogin
+    @PostMapping("/{inviteMemberId}/action-accept")
+    public ResponseEntity<?> actionAccept(@PathVariable(value = "inviteMemberId") Object inviteMemberIdObj) {
+        Message message = new Message();
+        UUID inviteMemberId = null;
+
+        try {
+            inviteMemberId = UUID.fromString(inviteMemberIdObj.toString());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new NotMatchedFormatException("형식이 올바르지 않습니다.");
+        }
+
+        inviteMemberBusinessService.acceptMemberInWorkspace(inviteMemberId);
+        message.setStatus(HttpStatus.OK);
+        message.setMessage("success");
+
+        return new ResponseEntity<>(message, message.getStatus());
+    }
+
+    @RequiredLogin
+    @PostMapping("/{inviteMemberId}/action-reject")
+    public ResponseEntity<?> actionReject(@PathVariable(value = "inviteMemberId") Object inviteMemberIdObj) {
+        Message message = new Message();
+        UUID inviteMemberId = null;
+
+        try {
+            inviteMemberId = UUID.fromString(inviteMemberIdObj.toString());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new NotMatchedFormatException("형식이 올바르지 않습니다.");
+        }
+
+        inviteMemberBusinessService.rejectMemberInWorkspace(inviteMemberId);
         message.setStatus(HttpStatus.OK);
         message.setMessage("success");
 

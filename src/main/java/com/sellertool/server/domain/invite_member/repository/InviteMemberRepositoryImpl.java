@@ -42,4 +42,44 @@ public class InviteMemberRepositoryImpl implements InviteMemberRepositoryCustom 
         QueryResults<InviteMemberM2OJProj> results = customQuery.fetchResults();
         return results.getResults();
     }
+
+    @Override
+    public List<InviteMemberM2OJProj> qSelectM2OJByUserId(UUID userId) {
+        JPQLQuery customQuery = query.from(qInviteMemberEntity)
+                .select(
+                        Projections.fields(
+                                InviteMemberM2OJProj.class,
+                                qInviteMemberEntity.as("inviteMemberEntity"),
+                                qUserEntity.as("userEntity"),
+                                qWorkspaceEntity.as("workspaceEntity")
+                        )
+                )
+                .join(qUserEntity).on(qUserEntity.id.eq(qInviteMemberEntity.userId))
+                .join(qWorkspaceEntity).on(qWorkspaceEntity.id.eq(qInviteMemberEntity.workspaceId))
+                .where(qInviteMemberEntity.userId.eq(userId))
+                ;
+
+        QueryResults<InviteMemberM2OJProj> results = customQuery.fetchResults();
+        return results.getResults();
+    }
+
+    @Override
+    public List<InviteMemberM2OJProj> qSelectM2OJById(UUID inviteMemberId) {
+        JPQLQuery customQuery = query.from(qInviteMemberEntity)
+                .select(
+                        Projections.fields(
+                                InviteMemberM2OJProj.class,
+                                qInviteMemberEntity.as("inviteMemberEntity"),
+                                qUserEntity.as("userEntity"),
+                                qWorkspaceEntity.as("workspaceEntity")
+                        )
+                )
+                .join(qUserEntity).on(qUserEntity.id.eq(qInviteMemberEntity.userId))
+                .join(qWorkspaceEntity).on(qWorkspaceEntity.id.eq(qInviteMemberEntity.workspaceId))
+                .where(qInviteMemberEntity.id.eq(inviteMemberId))
+                ;
+
+        QueryResults<InviteMemberM2OJProj> results = customQuery.fetchResults();
+        return results.getResults();
+    }
 }

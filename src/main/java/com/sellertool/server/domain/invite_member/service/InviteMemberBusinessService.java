@@ -11,10 +11,15 @@ import com.sellertool.server.domain.workspace.entity.WorkspaceEntity;
 import com.sellertool.server.domain.workspace.service.WorkspaceService;
 import com.sellertool.server.domain.workspace_member.entity.WorkspaceMemberEntity;
 import com.sellertool.server.domain.workspace_member.service.WorkspaceMemberService;
+import com.sellertool.server.domain.workspace_member.utils.WorkspaceMemberStaticVariable;
+import com.sellertool.server.utils.DateTimeUtils;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.annotations.Type;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.Column;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -99,6 +104,19 @@ public class InviteMemberBusinessService {
     }
 
     /*
+        유저 아이디 GET
+        유저 아이디를 이용한 M2OJ 서치
+     */
+    @Transactional(readOnly = true)
+    public Object searchM2OJByRequested() {
+        UUID USER_ID = userService.getUserId();
+
+        List<InviteMemberM2OJProj> proj = inviteMemberService.qSelectM2OJByUserId(USER_ID);
+        List<InviteMemberM2OJVo> vos = proj.stream().map(InviteMemberM2OJVo::toVo).collect(Collectors.toList());
+        return vos;
+    }
+
+    /*
      워크스페이스 존재 여부 확인
      워크스페이스 마스터 권한 체크
      */
@@ -111,5 +129,99 @@ public class InviteMemberBusinessService {
         WorkspaceEntity.masterOnly(workspaceEntity, USER_ID);
 
         inviteMemberService.deleteByWorkspaceIdAndInviteMemberId(workspaceId, inviteMemberId);
+    }
+
+    /*
+    inviteMemberProj 데이터 가져오기
+    inviteMember의 유저 아이디와 계정 유저 아이디 검증
+    workspaceMemberEntities 조회
+    workspaceMemberEntities 내부에 해당 유저 아이디와 같은 멤버가 있다면 에러
+    workspaceMemberEntity 생성
+    workspaceMember 저장
+    inviteMember 삭제
+     */
+    @Transactional
+    public void acceptMemberInWorkspace(UUID inviteMemberId) {
+        /*
+        inviteMemberProj 데이터 가져오기
+         */
+        InviteMemberM2OJProj proj = inviteMemberService.qSelectM2OJById(inviteMemberId);
+        InviteMemberEntity inviteMemberEntity = proj.getInviteMemberEntity();
+        UserEntity userEntity = proj.getUserEntity();
+        WorkspaceEntity workspaceEntity = proj.getWorkspaceEntity();
+
+        if (proj == null) {
+            throw new NotMatchedFormatException("요청 데이터를 찾을 수 없습니다.");
+        }
+
+        UUID USER_ID = userService.getUserId();
+
+        /*
+        inviteMember의 유저 아이디와 계정 유저 아이디 검증
+         */
+        if (!userEntity.getId().equals(USER_ID)) {
+            throw new NotMatchedFormatException("정상적인 요청이 아닙니다.");
+        }
+
+        /*
+        workspaceMemberEntities 조회
+        workspaceMemberEntities 내부에 해당 유저 아이디와 같은 멤버가 있다면 에러
+         */
+        List<WorkspaceMemberEntity> workspaceMemberEntities = workspaceMemberService.searchListByWorkspaceId(workspaceEntity.getId());
+        workspaceMemberEntities.stream().filter(r->r.getUserId().equals(USER_ID)).findAny().orElseThrow(() -> new NotMatchedFormatException("정상적인 요청이 아닙니다."));
+
+        /*
+        workspaceMemberEntity 생성
+         */
+        WorkspaceMemberEntity workspaceMemberEntity = WorkspaceMemberEntity
+                .builder()
+                .id(UUID.randomUUID())
+                .workspaceId(workspaceEntity.getId())
+                .userId(USER_ID)
+                .grade(WorkspaceMemberStaticVariable.GRADE_MEMBER)
+                .createdAt(DateTimeUtils.getCurrentDateTime())
+                .readPermissionYn(WorkspaceMemberStaticVariable.READ_PERMISSION_Y)
+                .writePermissionYn(WorkspaceMemberStaticVariable.WRITE_PERMISSION_N)
+                .updatePermissionYn(WorkspaceMemberStaticVariable.UPDATE_PERMISSION_N)
+                .deletePermissionYn(WorkspaceMemberStaticVariable.DELETE_PERMISSION_N)
+                .build();
+
+        /*
+        workspaceMember 저장
+        inviteMember 삭제
+         */
+        workspaceMemberService.saveAndModify(workspaceMemberEntity);
+        inviteMemberService.deleteByEntity(inviteMemberEntity);
+    }
+
+    /*
+    inviteMemberProj 데이터 가져오기
+    inviteMember의 유저 아이디와 계정 유저 아이디 검증
+    inviteMember 삭제
+     */
+    public void rejectMemberInWorkspace(UUID inviteMemberId) {
+        /*
+        inviteMemberProj 데이터 가져오기
+         */
+        InviteMemberM2OJProj proj = inviteMemberService.qSelectM2OJById(inviteMemberId);
+        InviteMemberEntity inviteMemberEntity = proj.getInviteMemberEntity();
+        UserEntity userEntity = proj.getUserEntity();
+
+        if (proj == null) {
+            throw new NotMatchedFormatException("요청 데이터를 찾을 수 없습니다.");
+        }
+
+        /*
+        inviteMember의 유저 아이디와 계정 유저 아이디 검증
+         */
+        UUID USER_ID = userService.getUserId();
+        if (!userEntity.getId().equals(USER_ID)) {
+            throw new NotMatchedFormatException("잘못된 요청 입니다.");
+        }
+
+        /*
+        inviteMember 삭제
+         */
+        inviteMemberService.deleteByEntity(inviteMemberEntity);
     }
 }

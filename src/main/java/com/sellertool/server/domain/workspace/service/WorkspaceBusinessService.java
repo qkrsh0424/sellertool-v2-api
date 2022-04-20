@@ -100,7 +100,7 @@ public class WorkspaceBusinessService {
                 .id(WORKSPACE_MEMBER_ID)
                 .workspaceId(WORKSPACE_ID)
                 .userId(USER_ID)
-                .grade(WorkspaceMemberStaticVariable.GRADE_MASTER)
+                .grade(WorkspaceMemberStaticVariable.GRADE_HOST)
                 .createdAt(DateTimeUtils.getCurrentDateTime())
                 .readPermissionYn(WorkspaceMemberStaticVariable.READ_PERMISSION_Y)
                 .writePermissionYn(WorkspaceMemberStaticVariable.WRITE_PERMISSION_Y)
