@@ -4,9 +4,11 @@ import com.sellertool.server.domain.workspace_member.proj.WorkspaceMemberM2OJPro
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface WorkspaceMemberRepositoryCustom {
     List<WorkspaceMemberM2OJProj> qSelectM2OJByWorkspaceId(UUID workspaceId);
+    Optional<WorkspaceMemberM2OJProj> qSelectM2OJ(UUID workspaceMemberId);
 }

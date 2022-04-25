@@ -1,6 +1,7 @@
 package com.sellertool.server.domain.workspace_member.service;
 
 import com.sellertool.server.domain.exception.dto.NotAllowedAccessException;
+import com.sellertool.server.domain.exception.dto.NotMatchedFormatException;
 import com.sellertool.server.domain.workspace_member.entity.WorkspaceMemberEntity;
 import com.sellertool.server.domain.workspace_member.proj.WorkspaceMemberM2OJProj;
 import com.sellertool.server.domain.workspace_member.repository.WorkspaceMemberRepository;
@@ -31,8 +32,12 @@ public class WorkspaceMemberService {
         return workspaceMemberRepository.findByWorkspaceId(workspaceId);
     }
 
-    public List<WorkspaceMemberM2OJProj> searchM2OJProjByWorkspaceId(UUID workspaceId) {
+    public List<WorkspaceMemberM2OJProj> searchM2OJProjectionsByWorkspaceId(UUID workspaceId) {
         return workspaceMemberRepository.qSelectM2OJByWorkspaceId(workspaceId);
+    }
+
+    public WorkspaceMemberM2OJProj searchM2OJProjection(UUID workspaceMemberId) {
+        return workspaceMemberRepository.qSelectM2OJ(workspaceMemberId).orElseThrow(()-> new NotMatchedFormatException("해당 데이터를 찾을 수 없습니다."));
     }
 
     public boolean isAccessedWritePermissionOfWorkspace(UUID workspaceId, UUID userId) {
@@ -105,5 +110,9 @@ public class WorkspaceMemberService {
 
     public List<WorkspaceMemberEntity> searchListByUserId(UUID userId) {
         return workspaceMemberRepository.findByUserId(userId);
+    }
+
+    public void deleteByEntity(WorkspaceMemberEntity entity) {
+        workspaceMemberRepository.delete(entity);
     }
 }
