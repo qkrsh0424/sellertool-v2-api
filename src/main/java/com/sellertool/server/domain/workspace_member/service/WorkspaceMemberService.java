@@ -40,6 +40,10 @@ public class WorkspaceMemberService {
         return workspaceMemberRepository.qSelectM2OJ(workspaceMemberId).orElseThrow(()-> new NotMatchedFormatException("해당 데이터를 찾을 수 없습니다."));
     }
 
+    public WorkspaceMemberM2OJProj searchM2OJProjection(UUID workspaceId, UUID workspaceMemberUserId) {
+        return workspaceMemberRepository.qSelectM2OJ(workspaceId, workspaceMemberUserId).orElseThrow(()-> new NotMatchedFormatException("해당 데이터를 찾을 수 없습니다."));
+    }
+
     public boolean isAccessedWritePermissionOfWorkspace(UUID workspaceId, UUID userId) {
         List<WorkspaceMemberEntity> workspaceMemberEntities = workspaceMemberRepository.findByWorkspaceId(workspaceId);
 

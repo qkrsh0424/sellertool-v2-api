@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface WorkspaceMemberRepositoryCustom {
     List<WorkspaceMemberM2OJProj> qSelectM2OJByWorkspaceId(UUID workspaceId);
     Optional<WorkspaceMemberM2OJProj> qSelectM2OJ(UUID workspaceMemberId);
+    Optional<WorkspaceMemberM2OJProj> qSelectM2OJ(UUID workspaceId, UUID workspaceMemberUserId);
 }

@@ -61,4 +61,21 @@ public class WorkspaceMemberRepositoryImpl implements WorkspaceMemberRepositoryC
                 .where(qWorkspaceMemberEntity.id.eq(workspaceMemberId));
         return Optional.ofNullable((WorkspaceMemberM2OJProj) customQuery.fetchOne());
     }
+
+    @Override
+    public Optional<WorkspaceMemberM2OJProj> qSelectM2OJ(UUID workspaceId, UUID workspaceMemberUserId) {
+        JPQLQuery customQuery = query.from(qWorkspaceMemberEntity)
+                .select(
+                        Projections.fields(WorkspaceMemberM2OJProj.class,
+                                qWorkspaceMemberEntity.as("workspaceMemberEntity"),
+                                qWorkspaceEntity.as("workspaceEntity"),
+                                qUserEntity.as("userEntity")
+                        )
+                )
+                .innerJoin(qWorkspaceEntity).on(qWorkspaceEntity.id.eq(qWorkspaceMemberEntity.workspaceId))
+                .innerJoin(qUserEntity).on(qUserEntity.id.eq(qWorkspaceMemberEntity.userId))
+                .where(qWorkspaceMemberEntity.workspaceId.eq(workspaceId))
+                .where(qWorkspaceMemberEntity.userId.eq(workspaceMemberUserId));
+        return Optional.ofNullable((WorkspaceMemberM2OJProj) customQuery.fetchOne());
+    }
 }
