@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Type;
+import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -21,6 +22,8 @@ import java.util.UUID;
 @Table(name = "category")
 @DynamicUpdate
 @DynamicInsert
+@Where(clause = "deleted_flag=0") // Sort Delete 적용
+//@SQLDelete("UPDATE category SET deleted_flag=1 WHERE id = ?") // deleteById 를 발생 시켰을때 소프트 딜리트 제공
 public class CategoryEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,9 +44,15 @@ public class CategoryEntity {
     @Type(type = "uuid-char")
     private UUID createdBy;
 
+    @Column(name = "workspace_cid")
+    private Integer workspaceCid;
+
     @Column(name = "workspace_id")
     @Type(type = "uuid-char")
     private UUID workspaceId;
+
+    @Column(name="deleted_flag")
+    private boolean deletedFlag;
 
     public static CategoryEntity toEntity(CategoryDto dto) {
         CategoryEntity entity = CategoryEntity.builder()
@@ -52,7 +61,9 @@ public class CategoryEntity {
                 .name(dto.getName())
                 .createdAt(dto.getCreatedAt())
                 .createdBy(dto.getCreatedBy())
+                .workspaceCid(dto.getWorkspaceCid())
                 .workspaceId(dto.getWorkspaceId())
+                .deletedFlag(dto.isDeletedFlag())
                 .build();
         return entity;
     }

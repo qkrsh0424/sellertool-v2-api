@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/category")
+@RequestMapping("/api/v1/categories")
 @RequiredArgsConstructor
 public class CategoryApi {
     private final CategoryBusinessService categoryBusinessService;
@@ -85,6 +85,27 @@ public class CategoryApi {
         }
 
         categoryBusinessService.updateOne(workspaceId, categoryDto);
+        message.setStatus(HttpStatus.OK);
+        message.setMessage("success");
+
+        return new ResponseEntity<>(message, message.getStatus());
+    }
+
+    @DeleteMapping("/{categoryId}/workspaces/{workspaceId}")
+    @RequiredLogin
+    public ResponseEntity<?> deleteOne(@PathVariable(value = "categoryId") Object categoryIdObj, @PathVariable(value = "workspaceId") Object workspaceIdObj){
+        Message message = new Message();
+
+        UUID workspaceId = null;
+        UUID categoryId = null;
+        try {
+            workspaceId = UUID.fromString(workspaceIdObj.toString());
+            categoryId = UUID.fromString(categoryIdObj.toString());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new NotMatchedFormatException("잘못된 요청입니다. 정상적인 요청을 이용해 주세요.");
+        }
+
+        categoryBusinessService.deleteOne(workspaceId, categoryId);
         message.setStatus(HttpStatus.OK);
         message.setMessage("success");
 

@@ -1,4 +1,4 @@
-package com.sellertool.server.domain.category.dto;
+package com.sellertool.server.domain.product.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,13 +14,22 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class CategoryDto {
+public class ProductDto {
     private Integer cid;
     private UUID id;
-    private String name;
+    private String code;
+    private String defaultName;
+    private String managementName;
+    private String imageUrl;
+    private String memo1;
+    private String memo2;
+    private String memo3;
+    private boolean stockManagementFlag;
     private LocalDateTime createdAt;
     private UUID createdBy;
     private Integer workspaceCid;
     private UUID workspaceId;
+    private Integer categoryCid;
+    private UUID categoryId;
     private boolean deletedFlag;
 }

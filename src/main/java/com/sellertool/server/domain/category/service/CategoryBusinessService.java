@@ -90,7 +90,8 @@ public class CategoryBusinessService {
                 .name(categoryDto.getName())
                 .createdAt(DateTimeUtils.getCurrentDateTime())
                 .createdBy(USER_ID)
-                .workspaceId(workspaceId)
+                .workspaceCid(workspaceEntity.getCid())
+                .workspaceId(workspaceEntity.getId())
                 .build();
 
         /*
@@ -147,5 +148,50 @@ public class CategoryBusinessService {
          */
         categoryEntity.setName(categoryDto.getName());
 
+    }
+
+    /**
+     * 카테고리를 삭제하는 로직
+     * @param workspaceId
+     * @param categoryId
+     */
+    /*
+    로그인 유저 아이디와 워크스페이스 아이디를 이용해 WorkspaceMemberM2OJProj 불러오기
+    워크스페이스 존재여부 확인
+    워크스페이스 멤버 삭제 권한 확인
+    카테고리 불러오기
+    파라메터의 워크스페이스 아이디와 카테고리의 워크스페이스 아이디를 비교
+    삭제
+     */
+    @Transactional
+    public void deleteOne(UUID workspaceId, UUID categoryId) {
+        UUID USER_ID = userService.getUserId();
+        /*
+        로그인 유저 아이디와 워크스페이스 아이디를 이용해 WorkspaceMemberM2OJProj 불러오기
+         */
+        WorkspaceMemberM2OJProj workspaceMemberM2OJProj = workspaceMemberService.searchM2OJProjection(workspaceId, USER_ID);
+
+        WorkspaceEntity workspaceEntity = workspaceMemberM2OJProj.getWorkspaceEntity();
+        WorkspaceMemberEntity workspaceMemberEntity = workspaceMemberM2OJProj.getWorkspaceMemberEntity();
+
+        /*
+        워크스페이스 존재여부 확인
+         */
+        WorkspaceEntity.existence(workspaceEntity);
+
+        /*
+        워크스페이스 멤버 삭제 권한 확인
+         */
+        WorkspaceMemberEntity.hasDeletePermission(workspaceMemberEntity);
+
+        CategoryEntity categoryEntity = categoryService.selectById(categoryId);
+        /*
+        파라메터의 워크스페이스 아이디와 카테고리의 워크스페이스 아이디를 비교
+         */
+        if (!categoryEntity.getWorkspaceId().equals(workspaceId)) {
+            throw new NotAllowedAccessException("해당 데이터에 접근 권한이 없습니다.");
+        }
+
+        categoryService.logicalDeleteOne(categoryEntity);
     }
 }
