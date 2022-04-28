@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface CategoryRepository extends JpaRepository<CategoryEntity, Integer> {
+public interface CategoryRepository extends JpaRepository<CategoryEntity, Integer>, CategoryRepositoryCustom {
     List<CategoryEntity> findAllByWorkspaceId(UUID workspaceId);
     Optional<CategoryEntity> findById(UUID id);
 }

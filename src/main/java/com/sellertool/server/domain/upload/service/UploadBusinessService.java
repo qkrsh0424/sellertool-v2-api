@@ -8,6 +8,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.sellertool.server.domain.exception.dto.NotMatchedFormatException;
 import com.sellertool.server.domain.upload.dto.ImageFileDto;
 import com.sellertool.server.utils.DateTimeUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,7 @@ import java.util.UUID;
 @Slf4j
 //TODO : 이미지 파일 업로드 리팩터링 해야됨.
 public class UploadBusinessService {
-    private final String IMAGE_DIR = "/upload/image";
+    private final String IMAGE_DIR = "/images";
 
     private AmazonS3 s3Client;
 
@@ -61,13 +62,13 @@ public class UploadBusinessService {
         Long fileSize = file.getSize();
 
         if (!isPermissionImageFileExt(fileOriginName)) {
-            throw new IllegalArgumentException("Not supported file extension.");
+            throw new NotMatchedFormatException("Not supported file extension.");
         }
 
         String fileName = getFileName(fileOriginName);
         String fileUrl = "https://" + bucketPath + "/" + fileName;
 
-        if (postFile2S3(bucketPath, fileName, file)) {
+        if (this.postFile2S3(bucketPath, fileName, file)) {
             fileS3GetDto = ImageFileDto.builder()
                     .id(UUID.randomUUID())
                     .fileExtension(fileExtension)

@@ -1,6 +1,7 @@
 package com.sellertool.server.domain.category.service;
 
 import com.sellertool.server.domain.category.entity.CategoryEntity;
+import com.sellertool.server.domain.category.proj.CategoryM2OJProj;
 import com.sellertool.server.domain.category.repository.CategoryRepository;
 import com.sellertool.server.domain.exception.dto.NotMatchedFormatException;
 import com.sellertool.server.utils.FlagInterface;
@@ -38,5 +39,9 @@ public class CategoryService {
      */
     public void logicalDeleteOne(CategoryEntity entity){
         entity.setDeletedFlag(FlagInterface.SET_DELETE);
+    }
+
+    public CategoryM2OJProj searchM2OJProjection(UUID categoryId, UUID userId) {
+        return categoryRepository.qSelectM2OJ(categoryId, userId).orElseThrow(()-> new NotMatchedFormatException("해당 데이터를 찾을 수 없습니다."));
     }
 }

@@ -39,7 +39,7 @@ public class ProductEntity {
     @Column(name = "management_name")
     private String managementName;
 
-    @Column(name = "imange_url")
+    @Column(name = "image_url")
     private String imageUrl;
 
     @Column(name = "memo1")
