@@ -1,6 +1,9 @@
 package com.sellertool.server.domain.category.entity;
 
 import com.sellertool.server.domain.category.dto.CategoryDto;
+import com.sellertool.server.domain.exception.dto.AccessDeniedPermissionException;
+import com.sellertool.server.domain.exception.dto.NotMatchedFormatException;
+import com.sellertool.server.domain.workspace.entity.WorkspaceEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -66,5 +69,15 @@ public class CategoryEntity {
                 .deletedFlag(dto.isDeletedFlag())
                 .build();
         return entity;
+    }
+
+    public static void belongInWorkspace(CategoryEntity categoryEntity, WorkspaceEntity workspaceEntity) {
+        if(categoryEntity == null || workspaceEntity == null){
+            throw new NotMatchedFormatException("해당 데이터를 찾을 수 없습니다.");
+        }
+
+        if(!categoryEntity.workspaceId.equals(workspaceEntity.getId())){
+            throw new AccessDeniedPermissionException("해당 데이터에 접근 권한이 없습니다.");
+        }
     }
 }
