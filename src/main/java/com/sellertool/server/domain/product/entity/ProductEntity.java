@@ -1,5 +1,8 @@
 package com.sellertool.server.domain.product.entity;
 
+import com.sellertool.server.domain.exception.dto.AccessDeniedPermissionException;
+import com.sellertool.server.domain.exception.dto.NotMatchedFormatException;
+import com.sellertool.server.domain.workspace.entity.WorkspaceEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,7 +29,7 @@ public class ProductEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "cid")
-    private Integer cid;
+    private Long cid;
 
     @Column(name = "id")
     @Type(type = "uuid-char")
@@ -44,15 +47,6 @@ public class ProductEntity {
     @Column(name = "image_url")
     private String imageUrl;
 
-    @Column(name = "memo1")
-    private String memo1;
-
-    @Column(name = "memo2")
-    private String memo2;
-
-    @Column(name = "memo3")
-    private String memo3;
-
     @Column(name = "stock_management_flag")
     private boolean stockManagementFlag;
 
@@ -62,6 +56,9 @@ public class ProductEntity {
     @Column(name = "created_by")
     @Type(type = "uuid-char")
     private UUID createdBy;
+
+    @Column(name = "product_info_cid")
+    private Long productInfoCid;
 
     @Column(name = "workspace_cid")
     private Integer workspaceCid;
@@ -79,4 +76,40 @@ public class ProductEntity {
 
     @Column(name = "deleted_flag")
     private boolean deletedFlag;
+
+    public static void belongInWorkspace(ProductEntity productEntity, WorkspaceEntity workspaceEntity) {
+        if(productEntity == null || workspaceEntity == null){
+            throw new NotMatchedFormatException("해당 데이터를 찾을 수 없습니다.");
+        }
+
+        if(!productEntity.workspaceId.equals(workspaceEntity.getId())){
+            throw new AccessDeniedPermissionException("해당 데이터에 접근 권한이 없습니다.");
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Entity
+    @Table(name = "product_info")
+    public static class ProductInfoEntity{
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        @Column(name = "cid")
+        private Long cid;
+
+        @Column(name = "id")
+        @Type(type = "uuid-char")
+        private UUID id;
+
+        @Column(name = "memo1")
+        private String memo1;
+
+        @Column(name = "memo2")
+        private String memo2;
+
+        @Column(name = "memo3")
+        private String memo3;
+    }
 }

@@ -69,7 +69,7 @@ public class ProductApi {
     public ResponseEntity<?> createOne(
             @PathVariable(value = "categoryId") Object categoryIdObj,
             @RequestParam Map<String, Object> params,
-            @RequestBody ProductDto productDto
+            @RequestBody ProductDto.CreateRequest productDto
     ) {
         Message message = new Message();
 
@@ -84,6 +84,69 @@ public class ProductApi {
         }
 
         productBusinessService.createOne(workspaceId, categoryId, productDto);
+        message.setStatus(HttpStatus.OK);
+        message.setMessage("success");
+
+        return new ResponseEntity<>(message, message.getStatus());
+    }
+
+    /**
+     * <p>DELETE URL => /api/v1/products/{productId}</p>
+     * <p>parameters => [*workspaceId]</p>
+     *
+     * @param params
+     * @param params#workspaceId
+     */
+    @RequiredLogin
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<?> deleteOne(@PathVariable(value = "productId") Object productIdObj, @RequestParam Map<String, Object> params) {
+        Message message = new Message();
+
+        UUID workspaceId = null;
+        UUID productId = null;
+
+        try {
+            workspaceId = UUID.fromString(params.get("workspaceId").toString());
+            productId = UUID.fromString(productIdObj.toString());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new NotMatchedFormatException("잘못된 요청입니다. 정상적인 요청을 이용해 주세요.");
+        }
+
+        productBusinessService.deleteOne(workspaceId, productId);
+
+        message.setStatus(HttpStatus.OK);
+        message.setMessage("success");
+
+        return new ResponseEntity<>(message, message.getStatus());
+    }
+
+    /**
+     * <p>PUT URL => /api/v1/products/{productId}</p>
+     * <p>parameters => [*workspaceId]</p>
+     *
+     * @param params
+     * @param params#workspaceId
+     */
+    @RequiredLogin
+    @PutMapping("/{productId}")
+    public ResponseEntity<?> updateOne(
+            @PathVariable(value = "productId") Object productIdObj,
+            @RequestParam Map<String, Object> params,
+            @RequestBody ProductDto.UpdateRequest productDto
+    ) {
+        Message message = new Message();
+
+        UUID workspaceId = null;
+        UUID productId = null;
+
+        try {
+            workspaceId = UUID.fromString(params.get("workspaceId").toString());
+            productId = UUID.fromString(productIdObj.toString());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new NotMatchedFormatException("잘못된 요청입니다. 정상적인 요청을 이용해 주세요.");
+        }
+
+        productBusinessService.updateOne(workspaceId, productId, productDto);
         message.setStatus(HttpStatus.OK);
         message.setMessage("success");
 
