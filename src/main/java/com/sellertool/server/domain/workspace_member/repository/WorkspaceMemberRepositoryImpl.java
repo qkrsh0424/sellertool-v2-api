@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -43,5 +44,38 @@ public class WorkspaceMemberRepositoryImpl implements WorkspaceMemberRepositoryC
         QueryResults<WorkspaceMemberM2OJProj> result = customQuery.fetchResults();
 
         return result.getResults();
+    }
+
+    @Override
+    public Optional<WorkspaceMemberM2OJProj> qSelectM2OJ(UUID workspaceMemberId) {
+        JPQLQuery customQuery = query.from(qWorkspaceMemberEntity)
+                .select(
+                        Projections.fields(WorkspaceMemberM2OJProj.class,
+                                qWorkspaceMemberEntity.as("workspaceMemberEntity"),
+                                qWorkspaceEntity.as("workspaceEntity"),
+                                qUserEntity.as("userEntity")
+                        )
+                )
+                .innerJoin(qWorkspaceEntity).on(qWorkspaceEntity.id.eq(qWorkspaceMemberEntity.workspaceId))
+                .innerJoin(qUserEntity).on(qUserEntity.id.eq(qWorkspaceMemberEntity.userId))
+                .where(qWorkspaceMemberEntity.id.eq(workspaceMemberId));
+        return Optional.ofNullable((WorkspaceMemberM2OJProj) customQuery.fetchOne());
+    }
+
+    @Override
+    public Optional<WorkspaceMemberM2OJProj> qSelectM2OJ(UUID workspaceId, UUID workspaceMemberUserId) {
+        JPQLQuery customQuery = query.from(qWorkspaceMemberEntity)
+                .select(
+                        Projections.fields(WorkspaceMemberM2OJProj.class,
+                                qWorkspaceMemberEntity.as("workspaceMemberEntity"),
+                                qWorkspaceEntity.as("workspaceEntity"),
+                                qUserEntity.as("userEntity")
+                        )
+                )
+                .innerJoin(qWorkspaceEntity).on(qWorkspaceEntity.id.eq(qWorkspaceMemberEntity.workspaceId))
+                .innerJoin(qUserEntity).on(qUserEntity.id.eq(qWorkspaceMemberEntity.userId))
+                .where(qWorkspaceMemberEntity.workspaceId.eq(workspaceId))
+                .where(qWorkspaceMemberEntity.userId.eq(workspaceMemberUserId));
+        return Optional.ofNullable((WorkspaceMemberM2OJProj) customQuery.fetchOne());
     }
 }

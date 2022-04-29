@@ -168,7 +168,11 @@ public class InviteMemberBusinessService {
         workspaceMemberEntities 내부에 해당 유저 아이디와 같은 멤버가 있다면 에러
          */
         List<WorkspaceMemberEntity> workspaceMemberEntities = workspaceMemberService.searchListByWorkspaceId(workspaceEntity.getId());
-        workspaceMemberEntities.stream().filter(r->r.getUserId().equals(USER_ID)).findAny().orElseThrow(() -> new NotMatchedFormatException("정상적인 요청이 아닙니다."));
+        workspaceMemberEntities.forEach(r -> {
+            if (r.getUserId().equals(USER_ID)) {
+                throw new NotMatchedFormatException("이미 요청이 수락되었습니다.");
+            }
+        });
 
         /*
         workspaceMemberEntity 생성
