@@ -91,6 +91,12 @@ public class CategoryApi {
         return new ResponseEntity<>(message, message.getStatus());
     }
 
+    /**
+     * URL => /api/v1/categories/{categoryId}/workspaces/{workspaceId}
+     * @param categoryIdObj
+     * @param workspaceIdObj
+     * @return
+     */
     @DeleteMapping("/{categoryId}/workspaces/{workspaceId}")
     @RequiredLogin
     public ResponseEntity<?> deleteOne(@PathVariable(value = "categoryId") Object categoryIdObj, @PathVariable(value = "workspaceId") Object workspaceIdObj){
