@@ -67,9 +67,6 @@ public class ProductBusinessService {
         /*
         search
          */
-//        List<ProductEntity> productEntities = productService.searchListByWorkspaceIdAndCategoryId(workspaceId, categoryId);
-//        List<ProductVo.BasicResponse> vos = productEntities.stream().map(ProductVo.BasicResponse::toVo).collect(Collectors.toList());
-//        return vos;
         List<ProductProjection> productProjections = productService.qSearchListByWorkspaceIdAndCategoryId(workspaceId, categoryId);
         List<ProductVo.BasicResponse> vos = productProjections.stream().map(r->ProductVo.BasicResponse.toVo(r.getProductEntity(), r.getProductInfoEntity())).collect(Collectors.toList());
         return vos;
@@ -80,6 +77,7 @@ public class ProductBusinessService {
      */
     /*
     WorkspaceMemberM2OJProj 불러오기
+    category 불러오기
     워크스페이스 존재여부 확인
     워크스페이스 멤버 여부 확인
     워크스페이스 멤버 쓰기 권한 확인
