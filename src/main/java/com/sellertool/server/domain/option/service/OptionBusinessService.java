@@ -202,4 +202,66 @@ public class OptionBusinessService {
          */
         optionService.logicalDeleteOne(optionEntity);
     }
+
+    /**
+     * option update
+     */
+    /*
+    WorkspaceMemberM2OJProj 불러오기
+    워크스페이스 존재 여부 확인
+    워크스페이스 멤버 여부 확인
+    워크스페이스 업데이트 권한 확인
+    optionProjection 불러오기
+    option 이 워크스페이스 소유 인지 확인
+    Dirty Checking 업데이트
+     */
+    @Transactional
+    public void updateOne(UUID workspaceId, UUID optionId, OptionDto.UpdateRequest optionDto) {
+        UUID USER_ID = userService.getUserId();
+        /*
+        WorkspaceMemberM2OJProj 불러오기
+         */
+        WorkspaceMemberM2OJProj workspaceMemberM2OJProj = workspaceMemberService.searchM2OJProjection(workspaceId, USER_ID);
+        WorkspaceEntity workspaceEntity = workspaceMemberM2OJProj.getWorkspaceEntity();
+        WorkspaceMemberEntity workspaceMemberEntity = workspaceMemberM2OJProj.getWorkspaceMemberEntity();
+        /*
+        워크스페이스 존재 여부 확인
+         */
+        WorkspaceEntity.existence(workspaceEntity);
+
+        /*
+        워크스페이스 멤버 여부 확인
+         */
+        WorkspaceMemberEntity.memberOnlyWE(workspaceMemberEntity);
+        /*
+        워크스페이스 삭제 권한 확인
+         */
+        WorkspaceMemberEntity.hasUpdatePermission(workspaceMemberEntity);
+
+        OptionProjection optionProjection = optionService.qSearchM2OJById(optionId);
+        OptionEntity optionEntity = optionProjection.getOptionEntity();
+        OptionEntity.OptionInfoEntity optionInfoEntity = optionProjection.getOptionInfoEntity();
+
+        /*
+        option 이 워크스페이스 소유 인지 확인
+         */
+        OptionEntity.belongInWorkspace(optionEntity, workspaceEntity);
+
+        /*
+        Dirty Checking 업데이트
+         */
+        optionInfoEntity.setStatus(optionDto.getOptionInfo().getStatus());
+        optionInfoEntity.setSalesPrice(optionDto.getOptionInfo().getSalesPrice());
+        optionInfoEntity.setMemo1(optionDto.getOptionInfo().getMemo1());
+        optionInfoEntity.setMemo2(optionDto.getOptionInfo().getMemo2());
+        optionInfoEntity.setMemo3(optionDto.getOptionInfo().getMemo3());
+
+        /*
+        Dirty Checking 업데이트
+         */
+        optionEntity.setDefaultName(optionDto.getDefaultName());
+        optionEntity.setManagementName(optionDto.getManagementName());
+        optionEntity.setImageUrl(optionDto.getImageUrl());
+        optionEntity.setStockUnit(optionDto.getStockUnit());
+    }
 }

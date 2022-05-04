@@ -24,22 +24,21 @@ public class OptionApiV1 {
     /**
      * <p>GET URL => /api/v1/options/products/{productId}</p>
      * <p>parameters => [*workspaceId]</p>
-     *
      */
     @RequiredLogin
     @GetMapping("/products/{productId}")
     public ResponseEntity<?> searchList(
             @PathVariable(value = "productId") Object productIdObj,
             @RequestParam Map<String, Object> params
-    ){
+    ) {
         Message message = new Message();
 
         UUID workspaceId = null;
         UUID productId = null;
-        try{
+        try {
             workspaceId = UUID.fromString(params.get("workspaceId").toString());
             productId = UUID.fromString(productIdObj.toString());
-        } catch (IllegalArgumentException | NullPointerException e){
+        } catch (IllegalArgumentException | NullPointerException e) {
             throw new NotMatchedFormatException("잘못된 요청입니다. 정상적인 요청을 이용해 주세요.");
         }
 
@@ -53,7 +52,6 @@ public class OptionApiV1 {
     /**
      * <p>POST URL => /api/v1/options/products/{productId}</p>
      * <p>parameters => [*workspaceId]</p>
-     *
      */
     @RequiredLogin
     @PostMapping("/products/{productId}")
@@ -66,10 +64,10 @@ public class OptionApiV1 {
 
         UUID workspaceId = null;
         UUID productId = null;
-        try{
+        try {
             workspaceId = UUID.fromString(params.get("workspaceId").toString());
             productId = UUID.fromString(productIdObj.toString());
-        } catch (IllegalArgumentException | NullPointerException e){
+        } catch (IllegalArgumentException | NullPointerException e) {
             throw new NotMatchedFormatException("잘못된 요청입니다. 정상적인 요청을 이용해 주세요.");
         }
 
@@ -81,20 +79,53 @@ public class OptionApiV1 {
         return new ResponseEntity<>(message, message.getStatus());
     }
 
+    /**
+     * <p>PUT URL => /api/v1/options/{optionId}</p>
+     * <p>parameters => [*workspaceId]</p>
+     */
+    @RequiredLogin
+    @PutMapping("/{optionId}")
+    public ResponseEntity<?> updateOne(
+            @PathVariable(value = "optionId") Object optionIdObj,
+            @RequestParam Map<String, Object> params,
+            @RequestBody OptionDto.UpdateRequest optionDto
+    ) {
+        Message message = new Message();
+
+        UUID workspaceId = null;
+        UUID optionId = null;
+        try {
+            workspaceId = UUID.fromString(params.get("workspaceId").toString());
+            optionId = UUID.fromString(optionIdObj.toString());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new NotMatchedFormatException("잘못된 요청입니다. 정상적인 요청을 이용해 주세요.");
+        }
+
+        optionBusinessService.updateOne(workspaceId, optionId, optionDto);
+        message.setStatus(HttpStatus.OK);
+        message.setMessage("success");
+
+        return new ResponseEntity<>(message, message.getStatus());
+    }
+
+    /**
+     * <p>DELETE URL => /api/v1/options/{optionId}</p>
+     * <p>parameters => [*workspaceId]</p>
+     */
     @RequiredLogin
     @DeleteMapping("/{optionId}")
     public ResponseEntity<?> deleteOne(
             @PathVariable(value = "optionId") Object optionIdObj,
             @RequestParam Map<String, Object> params
-    ){
+    ) {
         Message message = new Message();
 
         UUID workspaceId = null;
         UUID optionId = null;
-        try{
+        try {
             workspaceId = UUID.fromString(params.get("workspaceId").toString());
             optionId = UUID.fromString(optionIdObj.toString());
-        } catch (IllegalArgumentException | NullPointerException e){
+        } catch (IllegalArgumentException | NullPointerException e) {
             throw new NotMatchedFormatException("잘못된 요청입니다. 정상적인 요청을 이용해 주세요.");
         }
 

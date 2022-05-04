@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -51,5 +52,21 @@ public class OptionRepositoryImpl implements OptionRepositoryCustom{
 
         QueryResults<OptionProjection> results = customQuery.fetchResults();
         return results.getResults();
+    }
+
+    @Override
+    public Optional<OptionProjection> qSelectM2OJById(UUID optionId) {
+        JPQLQuery customQuery = query.from(qOptionEntity)
+                .select(
+                        Projections.fields(
+                                OptionProjection.class,
+                                qOptionEntity.as("optionEntity"),
+                                qOptionInfoEntity.as("optionInfoEntity")
+                        )
+                )
+                .innerJoin(qOptionInfoEntity).on(qOptionInfoEntity.cid.eq(qOptionEntity.optionInfoCid))
+                .where(qOptionEntity.id.eq(optionId))
+                ;
+        return Optional.ofNullable((OptionProjection) customQuery.fetchOne());
     }
 }

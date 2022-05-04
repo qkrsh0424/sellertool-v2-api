@@ -68,4 +68,28 @@ public class OptionDto {
 
         private OptionInfoDto optionInfo;
     }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class UpdateRequest {
+        private Long cid;
+        private UUID id;
+        private String code;
+        private String defaultName;
+        private String managementName;
+        private String imageUrl;
+        private Integer stockUnit;
+        private LocalDateTime createdAt;
+        private UUID createdBy;
+        private Long optionInfoCid;
+        private Long productCid;
+        private UUID productId;
+        private Integer workspaceCid;
+        private UUID workspaceId;
+        private boolean deletedFlag;
+
+        private OptionInfoDto optionInfo;
+    }
 }

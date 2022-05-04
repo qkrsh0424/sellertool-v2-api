@@ -37,4 +37,8 @@ public class OptionService {
     public void logicalDeleteOne(OptionEntity entity) {
         entity.setDeletedFlag(FlagInterface.SET_DELETE);
     }
+
+    public OptionProjection qSearchM2OJById(UUID optionId){
+        return optionRepository.qSelectM2OJById(optionId).orElseThrow(() -> new NotMatchedFormatException("해당 데이터를 찾을 수 없습니다."));
+    }
 }
