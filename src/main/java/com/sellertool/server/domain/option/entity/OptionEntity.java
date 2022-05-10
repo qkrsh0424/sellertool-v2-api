@@ -1,5 +1,6 @@
 package com.sellertool.server.domain.option.entity;
 
+import com.sellertool.server.domain.erp_order_item.proj.ErpOrderItemProj;
 import com.sellertool.server.domain.exception.dto.AccessDeniedPermissionException;
 import com.sellertool.server.domain.exception.dto.NotMatchedFormatException;
 import com.sellertool.server.domain.product.entity.ProductEntity;
@@ -15,7 +16,9 @@ import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Data
 @AllArgsConstructor
@@ -78,6 +81,15 @@ public class OptionEntity {
     @Column(name = "deleted_flag")
     private boolean deletedFlag;
 
+    @Transient
+    private Integer receivedSum;
+
+    @Transient
+    private Integer releasedSum;
+
+    @Transient
+    private Integer stockSumUnit;
+
     public static void belongInWorkspace(OptionEntity optionEntity, WorkspaceEntity workspaceEntity) {
         if(optionEntity == null || workspaceEntity == null){
             throw new NotMatchedFormatException("해당 데이터를 찾을 수 없습니다.");
@@ -86,6 +98,13 @@ public class OptionEntity {
         if(!optionEntity.workspaceId.equals(workspaceEntity.getId())){
             throw new AccessDeniedPermissionException("해당 데이터에 접근 권한이 없습니다.");
         }
+    }
+
+    public static List<OptionEntity> getExistList(List<ErpOrderItemProj> itemProjs) {
+        return itemProjs.stream()
+                .filter(r -> r.getOptionEntity() != null)
+                .map(ErpOrderItemProj::getOptionEntity)
+                .collect(Collectors.toList());
     }
 
     @Data

@@ -42,6 +42,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);    // 토큰을 활용하면 세션이 필요없으므로 STATELESS로 설정해 세션을 사용하지 않는다
 
         http.cors();
+//        http
+//                .headers(headers -> headers
+//                        // allow same origin to frame our site to support iframe SockJS
+//                        .frameOptions(frameOptions -> frameOptions
+//                                .sameOrigin()
+//                        )
+//                );
         http
                 .authorizeRequests()
                 .antMatchers("/api/v1/superadmin/**")
@@ -61,9 +68,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .addFilterBefore(new RefererAuthenticationFilter(), CsrfFilter.class)
                 .addFilterAfter(new CsrfAuthenticationFilter(csrfTokenSecret), RefererAuthenticationFilter.class)
                 .addFilterAfter(new JwtAuthorizationFilter(accessTokenSecret), CsrfAuthenticationFilter.class)
+                .addFilterAfter(new JwtAuthorizationFilter(accessTokenSecret), CsrfFilter.class)
                 .addFilterBefore(new RefererExceptionFilter(), RefererAuthenticationFilter.class)
                 .addFilterBefore(new CsrfExceptionFilter(), CsrfAuthenticationFilter.class)
-                .addFilterBefore(new JwtAuthorizationExceptionFilter(), JwtAuthorizationFilter.class);
+                .addFilterBefore(new JwtAuthorizationExceptionFilter(), JwtAuthorizationFilter.class)
+        ;
     }
 
     @Bean

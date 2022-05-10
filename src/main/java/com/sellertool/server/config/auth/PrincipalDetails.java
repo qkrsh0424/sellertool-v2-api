@@ -14,7 +14,7 @@ import lombok.Data;
 public class PrincipalDetails implements UserDetails {
     
     private UserEntity user;
-    private Collection<? extends GrantedAuthority> authorities;
+//    private Collection<? extends GrantedAuthority> authorities;
 
     public PrincipalDetails(UserEntity user){
         this.user = user;
@@ -34,13 +34,13 @@ public class PrincipalDetails implements UserDetails {
     @Override
     public String getPassword() {
         // TODO Auto-generated method stub
-        return user.getPassword();
+        return user.getPassword() == null ? "" : user.getPassword();
     }
 
     @Override
     public String getUsername() {
         // TODO Auto-generated method stub
-        return user.getEmail();
+        return user.getUsername() == null ? "" : user.getUsername();
     }
 
     @Override

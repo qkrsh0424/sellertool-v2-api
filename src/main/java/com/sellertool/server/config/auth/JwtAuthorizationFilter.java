@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.WebUtils;
 
@@ -23,8 +24,12 @@ import java.util.UUID;
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
     private String accessTokenSecret;
 
-    final static List<String> excludeUrls = Arrays.asList(
 
+    /**
+     * wild card => **
+     * example => /wsc/**
+     */
+    final static List<String> excludeUrls = Arrays.asList(
     );
 
     public JwtAuthorizationFilter(
@@ -33,12 +38,14 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         this.accessTokenSecret = accessTokenSecret;
     }
 
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String path = request.getServletPath();
+        AntPathMatcher pathMatcher = new AntPathMatcher();
 
 //        CSRF 발급 등 excludeUrls 에 등록된 url 은 필터를 타지 않게 한다.
-        if (excludeUrls.contains(path)) {
+        if(excludeUrls.stream().anyMatch(r->pathMatcher.match(r, path))){
             filterChain.doFilter(request, response);
             return;
         }
@@ -106,12 +113,15 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     private void saveAuthenticationToSecurityContextHolder(UserEntity userEntity) {
         PrincipalDetails principalDetails = new PrincipalDetails(userEntity);
 
+
         // Jwt 토큰 서명을 통해서 서명이 정상이면 Authentication 객체를 만들어준다.
-        Authentication authentication = new UsernamePasswordAuthenticationToken(principalDetails, null,
+        UsernamePasswordAuthenticationToken userAuth = new UsernamePasswordAuthenticationToken(principalDetails, null,
                 principalDetails.getAuthorities());
 
+
+
         // 강제로 시큐리티의 세션에 접근하여 Authentication 객체를 저장.
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        SecurityContextHolder.getContext().setAuthentication(userAuth);
     }
 
     private String getClientIpAddress(HttpServletRequest request) {

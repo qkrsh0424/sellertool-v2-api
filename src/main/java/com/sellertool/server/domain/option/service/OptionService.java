@@ -10,8 +10,11 @@ import com.sellertool.server.utils.FlagInterface;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.Tuple;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,5 +43,24 @@ public class OptionService {
 
     public OptionProjection qSearchM2OJById(UUID optionId){
         return optionRepository.qSelectM2OJById(optionId).orElseThrow(() -> new NotMatchedFormatException("해당 데이터를 찾을 수 없습니다."));
+    }
+
+    public void setReceivedAndReleasedAndStockSum(List<OptionEntity> optionEntities) {
+        List<Long> productOptionCids = optionEntities.stream().map(r -> r.getCid()).collect(Collectors.toList());
+
+        List<Tuple> stockUnitTuple = optionRepository.searchReceivedAndReleasedUnitSumTuplesByOptionCids(productOptionCids);
+        stockUnitTuple.forEach(r -> {
+            Integer cid = r.get("cid", Integer.class);
+            Integer receivedSum = r.get("receivedSum", BigDecimal.class) != null ? r.get("receivedSum", BigDecimal.class).intValue() : 0;
+            Integer releasedSum = r.get("releasedSum", BigDecimal.class) != null ? r.get("releasedSum", BigDecimal.class).intValue() : 0;
+
+            optionEntities.forEach(entity -> {
+                if(entity.getCid().equals(cid)){
+                    entity.setReceivedSum(receivedSum);
+                    entity.setReleasedSum(releasedSum);
+                    entity.setStockSumUnit(receivedSum - releasedSum);
+                }
+            });
+        });
     }
 }
